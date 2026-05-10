@@ -1,0 +1,85 @@
+{
+  "manifest_version": 3,
+  "name": "Xenia — Tip on Somnia",
+  "version": "2.0.0",
+  "description": "Xenia — Send tips directly on X (Twitter) via Somnia Network",
+  "icons": {
+    "16": "public/icon.png",
+    "48": "public/icon.png",
+    "128": "public/icon.png"
+  },
+  "permissions": [
+    "storage",
+    "declarativeNetRequest",
+    "sidePanel",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://xenia.app/*",
+    "https://www.xenia.app/*",
+    "https://dream-rpc.somnia.network/*",
+    "https://shannon-explorer.somnia.network/*",
+    "https://syndication.twitter.com/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "side_panel": {
+    "default_path": "src/popup.html"
+  },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Xenia — Powered by Somnia"
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "src/somnia-network.js",
+        "src/content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://xenia.app/*",
+        "https://www.xenia.app/*"
+      ],
+      "js": [
+        "src/auth-sync.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https:;"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/somnia-network.js",
+        "src/bubble_embed.html",
+        "src/wallet_inject.js",
+        "src/kaching.mp3",
+        "src/contracts/Escrow.abi",
+        "public/somnia.png"
+      ],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ]
+    }
+  ]
+}
