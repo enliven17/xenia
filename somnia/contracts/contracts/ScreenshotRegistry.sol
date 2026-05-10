@@ -4,9 +4,14 @@ pragma solidity ^0.8.24;
 /**
  * @title Xenia ScreenshotRegistry — Somnia Network
  * @notice Stores on-chain Proof of Post (screenshot CID + tweet ID) on Somnia.
- * @dev Fully EVM-compatible Solidity contract.
+ *
+ * Security properties:
+ *   - registerScreenshot is onlyOwner (only backend can register proofs)
+ *   - Duplicate CID and tweetId both rejected
+ *   - Two-step ownership transfer
  */
 contract ScreenshotRegistry {
+
     struct Proof {
         string cid;
         uint256 timestamp;
@@ -18,6 +23,7 @@ contract ScreenshotRegistry {
     mapping(string => string) private cidByTweetId;
 
     address public owner;
+    address public pendingOwner;
 
     event ScreenshotRegistered(
         string indexed cid,
@@ -25,7 +31,8 @@ contract ScreenshotRegistry {
         address indexed recorder,
         uint256 timestamp
     );
-    event OwnerChanged(address indexed oldOwner, address indexed newOwner);
+    event OwnershipTransferProposed(address indexed proposed);
+    event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
 
     constructor() {
         owner = msg.sender;
@@ -36,7 +43,15 @@ contract ScreenshotRegistry {
         _;
     }
 
-    function registerScreenshot(string calldata _cid, string calldata _tweetId) external {
+    /**
+     * @notice Register a screenshot proof. Only the backend wallet (owner) can call this.
+     * @param _cid     IPFS CID of the screenshot.
+     * @param _tweetId Associated tweet ID.
+     */
+    function registerScreenshot(string calldata _cid, string calldata _tweetId)
+        external
+        onlyOwner
+    {
         require(bytes(_cid).length > 0, "CID required");
         require(bytes(_tweetId).length > 0, "Tweet ID required");
         require(bytes(cidByTweetId[_tweetId]).length == 0, "Tweet already registered");
@@ -73,9 +88,18 @@ contract ScreenshotRegistry {
         return (c, p.timestamp, p.recorder);
     }
 
-    function changeOwner(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "Invalid owner");
-        emit OwnerChanged(owner, newOwner);
-        owner = newOwner;
+    // ─── Two-step Ownership ───────────────────────────────────────────────────
+
+    function transferOwnership(address proposed) external onlyOwner {
+        require(proposed != address(0), "Invalid address");
+        pendingOwner = proposed;
+        emit OwnershipTransferProposed(proposed);
+    }
+
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "Not pending owner");
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 }

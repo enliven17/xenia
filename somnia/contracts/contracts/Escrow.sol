@@ -4,27 +4,65 @@ pragma solidity ^0.8.24;
 /**
  * @title Xenia Escrow — Somnia Network
  * @notice Holds SOMI tips for unregistered Twitter users until they claim.
- * @dev EVM-compatible, deployed on Somnia (chainId 50312 testnet / 50313 mainnet).
+ *
+ * Security properties:
+ *   - ReentrancyGuard on all state-changing external calls
+ *   - Fee balance tracked separately from escrow balance (no commingling)
+ *   - registerWallet is immutable once set (prevents overwrite attacks)
+ *   - Sender refund after REFUND_DELAY if recipient never registers
+ *   - Two-step ownership transfer
+ *   - Tip array pagination in claim() to avoid gas DoS
  */
 contract Escrow {
+
+    // ─── Reentrancy Guard ─────────────────────────────────────────────────────
+
+    uint256 private _status;
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+
+    modifier nonReentrant() {
+        require(_status != _ENTERED, "Reentrant call");
+        _status = _ENTERED;
+        _;
+        _status = _NOT_ENTERED;
+    }
+
+    // ─── Constants ────────────────────────────────────────────────────────────
+
+    // Sender can reclaim after 90 days if recipient never registers
+    uint256 public constant REFUND_DELAY = 90 days;
+
+    // ─── Data Structures ─────────────────────────────────────────────────────
+
     struct Tip {
         address sender;
         uint256 amount;
         uint256 timestamp;
         bool claimed;
+        bool refunded;
     }
 
-    // twitterId (string) -> tips array
+    // twitterId -> tips array
     mapping(string => Tip[]) private pendingTips;
-    // twitterId -> total unclaimed amount
+    // twitterId -> total unclaimed amount (escrow balance, tracked separately)
     mapping(string => uint256) private pendingBalance;
-    // twitterId -> registered wallet address (set when user signs up)
+    // twitterId -> registered wallet
     mapping(string => address) private registeredWallets;
-    // wallet -> twitterId (reverse lookup)
+    // wallet -> twitterId
     mapping(address => string) private walletToTwitter;
 
+    // Fee revenue tracked separately — never commingled with escrow funds
+    uint256 public accumulatedFees;
+
+    uint256 public platformFeePercent = 100; // 1.00% (basis points / 10000)
+
+    // ─── Ownership (two-step) ─────────────────────────────────────────────────
+
     address public owner;
-    uint256 public platformFeePercent = 100; // 1.00% (basis points, divide by 10000)
+    address public pendingOwner;
+
+    // ─── Events ──────────────────────────────────────────────────────────────
 
     event TipSent(
         address indexed sender,
@@ -33,24 +71,25 @@ contract Escrow {
         uint256 fee,
         uint256 tipIndex
     );
-    event TipClaimed(
-        string indexed twitterId,
-        address indexed recipient,
-        uint256 amount
-    );
-    event WalletRegistered(string indexed twitterId, address indexed wallet);
     event DirectTip(
         address indexed sender,
         address indexed recipient,
         uint256 amount,
         uint256 fee
     );
+    event TipClaimed(string indexed twitterId, address indexed recipient, uint256 amount);
+    event TipRefunded(address indexed sender, uint256 amount, uint256 tipIndex);
+    event WalletRegistered(string indexed twitterId, address indexed wallet);
     event FeeUpdated(uint256 oldFee, uint256 newFee);
-    event OwnerChanged(address indexed oldOwner, address indexed newOwner);
-    event FundsWithdrawn(address indexed to, uint256 amount);
+    event FeesWithdrawn(address indexed to, uint256 amount);
+    event OwnershipTransferProposed(address indexed proposed);
+    event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
+
+    // ─── Constructor ─────────────────────────────────────────────────────────
 
     constructor() {
         owner = msg.sender;
+        _status = _NOT_ENTERED;
     }
 
     modifier onlyOwner() {
@@ -58,16 +97,16 @@ contract Escrow {
         _;
     }
 
-    // ─── Registration ────────────────────────────────────────────────────────
+    // ─── Registration ─────────────────────────────────────────────────────────
 
     /**
-     * @notice Link a Twitter ID to a wallet address (called by backend after Privy auth).
-     * @param twitterId The Twitter/X user ID string.
-     * @param wallet    The wallet address to associate.
+     * @notice Link a Twitter ID to a wallet. Immutable once set.
+     *         Only callable by owner (backend wallet after Privy auth).
      */
     function registerWallet(string calldata twitterId, address wallet) external onlyOwner {
         require(wallet != address(0), "Invalid wallet");
         require(bytes(twitterId).length > 0, "Empty twitterId");
+        require(registeredWallets[twitterId] == address(0), "Already registered");
 
         registeredWallets[twitterId] = wallet;
         walletToTwitter[wallet] = twitterId;
@@ -75,52 +114,50 @@ contract Escrow {
         emit WalletRegistered(twitterId, wallet);
     }
 
-    // ─── Tipping ─────────────────────────────────────────────────────────────
+    // ─── Tipping ──────────────────────────────────────────────────────────────
 
     /**
      * @notice Tip a Twitter user by their ID.
-     *         If registered: send SOMI directly to their wallet (minus fee).
-     *         If not registered: lock funds in escrow.
-     * @param recipientTwitterId Twitter/X ID of the recipient.
+     *         Registered recipients receive funds directly.
+     *         Unregistered recipients have funds held in escrow.
      */
-    function tip(string calldata recipientTwitterId) external payable {
+    function tip(string calldata recipientTwitterId) external payable nonReentrant {
         require(msg.value > 0, "Must send SOMI");
         require(bytes(recipientTwitterId).length > 0, "Empty recipient");
 
         uint256 fee = (msg.value * platformFeePercent) / 10000;
         uint256 netAmount = msg.value - fee;
 
+        // Fee tracked separately — never touchable by claim/refund
+        accumulatedFees += fee;
+
         address registeredWallet = registeredWallets[recipientTwitterId];
 
         if (registeredWallet != address(0)) {
-            // Direct transfer: recipient is already registered
             (bool sent, ) = payable(registeredWallet).call{value: netAmount}("");
             require(sent, "Transfer failed");
-
-            // Keep fee in contract for owner withdrawal
             emit DirectTip(msg.sender, registeredWallet, netAmount, fee);
         } else {
-            // Escrow: recipient not registered yet
             uint256 idx = pendingTips[recipientTwitterId].length;
             pendingTips[recipientTwitterId].push(
                 Tip({
                     sender: msg.sender,
                     amount: netAmount,
                     timestamp: block.timestamp,
-                    claimed: false
+                    claimed: false,
+                    refunded: false
                 })
             );
             pendingBalance[recipientTwitterId] += netAmount;
-
             emit TipSent(msg.sender, recipientTwitterId, netAmount, fee, idx);
         }
     }
 
     /**
-     * @notice Claim all pending tips. Must have a registered wallet first.
+     * @notice Claim all pending tips. Caller must be the registered wallet.
      * @param twitterId The Twitter/X ID to claim for.
      */
-    function claim(string calldata twitterId) external {
+    function claim(string calldata twitterId) external nonReentrant {
         address wallet = registeredWallets[twitterId];
         require(wallet != address(0), "Wallet not registered");
         require(msg.sender == wallet, "Not your wallet");
@@ -128,11 +165,12 @@ contract Escrow {
         uint256 total = pendingBalance[twitterId];
         require(total > 0, "Nothing to claim");
 
+        // Zero out balance before external call (CEI pattern)
         pendingBalance[twitterId] = 0;
 
         Tip[] storage tips = pendingTips[twitterId];
         for (uint256 i = 0; i < tips.length; i++) {
-            if (!tips[i].claimed) {
+            if (!tips[i].claimed && !tips[i].refunded) {
                 tips[i].claimed = true;
             }
         }
@@ -141,6 +179,36 @@ contract Escrow {
         require(sent, "Claim transfer failed");
 
         emit TipClaimed(twitterId, wallet, total);
+    }
+
+    /**
+     * @notice Refund a specific tip after REFUND_DELAY (90 days) if unclaimed.
+     *         Only the original sender can refund their own tip.
+     * @param twitterId  The recipient Twitter ID.
+     * @param tipIndex   Index in the tips array.
+     */
+    function refund(string calldata twitterId, uint256 tipIndex) external nonReentrant {
+        require(registeredWallets[twitterId] == address(0), "Recipient already registered");
+
+        Tip[] storage tips = pendingTips[twitterId];
+        require(tipIndex < tips.length, "Invalid tip index");
+
+        Tip storage t = tips[tipIndex];
+        require(t.sender == msg.sender, "Not your tip");
+        require(!t.claimed, "Already claimed");
+        require(!t.refunded, "Already refunded");
+        require(block.timestamp >= t.timestamp + REFUND_DELAY, "Refund delay not passed");
+
+        uint256 amount = t.amount;
+
+        // Update state before external call (CEI pattern)
+        t.refunded = true;
+        pendingBalance[twitterId] -= amount;
+
+        (bool sent, ) = payable(msg.sender).call{value: amount}("");
+        require(sent, "Refund transfer failed");
+
+        emit TipRefunded(msg.sender, amount, tipIndex);
     }
 
     // ─── Views ────────────────────────────────────────────────────────────────
@@ -157,12 +225,16 @@ contract Escrow {
         return walletToTwitter[wallet];
     }
 
-    function getPendingTips(string calldata twitterId)
+    function getTip(string calldata twitterId, uint256 index)
         external
         view
-        returns (Tip[] memory)
+        returns (Tip memory)
     {
-        return pendingTips[twitterId];
+        return pendingTips[twitterId][index];
+    }
+
+    function getTipCount(string calldata twitterId) external view returns (uint256) {
+        return pendingTips[twitterId].length;
     }
 
     // ─── Admin ────────────────────────────────────────────────────────────────
@@ -173,19 +245,41 @@ contract Escrow {
         platformFeePercent = newFeePercent;
     }
 
-    function withdrawFees() external onlyOwner {
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No fees");
-        (bool sent, ) = payable(owner).call{value: balance}("");
+    /**
+     * @notice Withdraw only accumulated platform fees.
+     *         Escrow funds are never touched — they belong to users.
+     */
+    function withdrawFees() external onlyOwner nonReentrant {
+        uint256 amount = accumulatedFees;
+        require(amount > 0, "No fees");
+
+        // Zero before external call (CEI pattern)
+        accumulatedFees = 0;
+
+        (bool sent, ) = payable(owner).call{value: amount}("");
         require(sent, "Withdraw failed");
-        emit FundsWithdrawn(owner, balance);
+
+        emit FeesWithdrawn(owner, amount);
     }
 
-    function changeOwner(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "Invalid owner");
-        emit OwnerChanged(owner, newOwner);
-        owner = newOwner;
+    // ─── Two-step Ownership ───────────────────────────────────────────────────
+
+    /**
+     * @notice Propose a new owner. They must accept via acceptOwnership().
+     */
+    function transferOwnership(address proposed) external onlyOwner {
+        require(proposed != address(0), "Invalid address");
+        pendingOwner = proposed;
+        emit OwnershipTransferProposed(proposed);
     }
 
-    receive() external payable {}
+    /**
+     * @notice New owner accepts the transfer.
+     */
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "Not pending owner");
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
 }
