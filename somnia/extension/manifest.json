@@ -12,7 +12,8 @@
     "storage",
     "declarativeNetRequest",
     "sidePanel",
-    "alarms"
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "https://xenia.app/*",

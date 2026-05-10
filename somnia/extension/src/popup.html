@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xenia</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 320px;
+      min-height: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fafafa;
+      color: #111;
+    }
+    .header {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; color: #fff; font-size: 16px;
+    }
+    .header-text h1 { color: #fff; font-size: 16px; font-weight: 700; }
+    .header-text p  { color: rgba(255,255,255,0.7); font-size: 11px; margin-top: 1px; }
+
+    .content { padding: 16px; }
+
+    /* Not logged in */
+    #view-login { display: none; }
+    #view-login .hero {
+      text-align: center; padding: 24px 0;
+    }
+    #view-login .hero h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    #view-login .hero p  { font-size: 13px; color: #666; margin-bottom: 20px; }
+    .btn-primary {
+      display: block; width: 100%;
+      padding: 11px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: #fff; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      text-align: center; text-decoration: none;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+
+    /* Logged in */
+    #view-user { display: none; }
+    .user-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .user-card .handle { font-weight: 600; font-size: 15px; }
+    .user-card .address {
+      font-family: monospace; font-size: 11px;
+      color: #666; margin-top: 2px; word-break: break-all;
+    }
+    .balance-card {
+      background: linear-gradient(135deg, #7c3aed15, #4f46e515);
+      border: 1px solid #7c3aed30;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .balance-card .amount {
+      font-size: 24px; font-weight: 700;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .balance-card .label { font-size: 12px; color: #666; margin-top: 2px; }
+
+    .actions { display: flex; gap: 8px; margin-bottom: 12px; }
+    .btn-sm {
+      flex: 1; padding: 8px;
+      border: 1px solid #e5e7eb;
+      background: #fff; border-radius: 8px;
+      font-size: 12px; cursor: pointer;
+      color: #555; transition: all 0.15s;
+    }
+    .btn-sm:hover { border-color: #7c3aed; color: #7c3aed; }
+
+    .tip-form { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+    .tip-form h3 { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .tip-form input {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid #e5e7eb; border-radius: 8px;
+      font-size: 13px; margin-bottom: 8px; outline: none;
+    }
+    .tip-form input:focus { border-color: #7c3aed; }
+    #tip-status { font-size: 12px; margin-top: 6px; min-height: 16px; text-align: center; }
+
+    /* Footer */
+    .footer {
+      padding: 10px 16px;
+      border-top: 1px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-left { font-size: 11px; color: #aaa; }
+    .logout-btn {
+      font-size: 11px; color: #999;
+      background: none; border: none; cursor: pointer;
+    }
+    .logout-btn:hover { color: #dc2626; }
+    #loading { text-align: center; padding: 60px 0; color: #999; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">X</div>
+    <div class="header-text">
+      <h1>Xenia</h1>
+      <p>Tip on Somnia Network</p>
+    </div>
+  </div>
+
+  <div id="loading" class="content">Loading…</div>
+
+  <!-- Not logged in -->
+  <div id="view-login" class="content">
+    <div class="hero">
+      <h2>Connect Your Xenia Account</h2>
+      <p>Login to Xenia to start sending tips on X.</p>
+      <a href="https://xenia.app" target="_blank" class="btn-primary">Open Xenia →</a>
+    </div>
+    <div style="margin-top:16px;">
+      <p style="font-size:12px;color:#888;margin-bottom:8px;">Already have an API key?</p>
+      <input id="api-key-input" type="text" placeholder="xen_…"
+        style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;font-family:monospace;margin-bottom:8px;outline:none;" />
+      <button id="save-key-btn" class="btn-primary">Save Key</button>
+      <div id="key-status" style="font-size:12px;margin-top:6px;text-align:center;min-height:16px;"></div>
+    </div>
+  </div>
+
+  <!-- Logged in -->
+  <div id="view-user" class="content">
+    <div class="user-card">
+      <div class="handle" id="user-handle">@—</div>
+      <div class="address" id="user-address">—</div>
+    </div>
+    <div class="balance-card">
+      <div class="amount" id="user-balance">—</div>
+      <div class="label">STT Balance</div>
+    </div>
+    <div class="actions">
+      <button class="btn-sm" onclick="window.open('https://xenia.app/send-tips')">Send Tip</button>
+      <button class="btn-sm" onclick="window.open('https://xenia.app/deposit')">Deposit</button>
+      <button class="btn-sm" onclick="window.open('https://xenia.app/claims')">Claims</button>
+    </div>
+
+    <div class="tip-form">
+      <h3>Quick Tip</h3>
+      <input id="tip-handle" type="text" placeholder="@twitterhandle" />
+      <input id="tip-amount" type="number" placeholder="Amount (STT)" min="0.001" step="0.001" />
+      <button id="tip-send-btn" class="btn-primary">Send</button>
+      <div id="tip-status"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="footer-left">Powered by Somnia</span>
+    <button class="logout-btn" id="logout-btn">Disconnect</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
