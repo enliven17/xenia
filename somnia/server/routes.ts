@@ -364,3 +364,7 @@ router.get("/api/users/:twitterId", async (req: Request, res: Response) => {
 });
 
 export default router;
+
+export function registerRoutes(app: import("express").Application) {
+  app.use(router);
+}
