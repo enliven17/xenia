@@ -1,0 +1,194 @@
+# Xenia — Deployment Guide
+
+Frontend → **Vercel** · Backend → **Railway** · Database → **Neon** (Postgres) · Contracts → **Somnia**
+
+Total time: ~20 minutes if all accounts are ready.
+
+---
+
+## 0. Prerequisites
+
+| Account | What you need |
+|---|---|
+| **GitHub** | Your `aiext` repo pushed (the `somnia/` folder must be on a branch Vercel + Railway can read) |
+| **Neon** | A free Postgres database — copy the connection string (`postgresql://…?sslmode=require`) |
+| **Privy** | An app — copy the App ID and App Secret from the Privy dashboard |
+| **Vercel** | Free tier is fine |
+| **Railway** | Free trial / Hobby plan |
+| **Somnia testnet STT** | A funded wallet (for `BACKEND_WALLET_PRIVATE_KEY`) |
+| **Twitter / X dev** | API keys (only needed if you want the bot / OG-fetch flows) |
+
+---
+
+## 1. Deploy the contracts (one time)
+
+```powershell
+cd somnia/contracts
+copy .env.example .env
+# Edit .env → add PRIVATE_KEY of a wallet funded with Somnia testnet STT
+npm install
+npx hardhat run scripts/deploy.js --network somniaTestnet
+```
+
+The script prints two addresses. Save them — they go into the backend env:
+
+```
+ESCROW_CONTRACT_ADDRESS=0x…
+REGISTRY_CONTRACT_ADDRESS=0x…
+```
+
+---
+
+## 2. Deploy the backend on Railway
+
+### 2.1 Create the project
+
+1. Go to <https://railway.app/new> → **Deploy from GitHub repo** → pick your repo
+2. **Important:** in Railway → Service → Settings → **Root Directory** = `somnia`
+3. Railway auto-detects Node + reads `somnia/railway.json`
+4. It will run:
+   - **Build:** `npm install && npm run build`
+   - **Start:** `npm start`
+   - **Healthcheck:** `GET /api/health`
+
+### 2.2 Set environment variables on Railway
+
+In Railway → Service → **Variables**, paste all of these (values from your `.env.example`):
+
+```
+SOMNIA_CHAIN_ID=50312
+SOMNIA_RPC_URL=https://dream-rpc.somnia.network
+ESCROW_CONTRACT_ADDRESS=0x…              # from step 1
+REGISTRY_CONTRACT_ADDRESS=0x…            # from step 1
+BACKEND_WALLET_PRIVATE_KEY=0x…           # owner of the Escrow contract
+DATABASE_URL=postgresql://…?sslmode=require
+SESSION_SECRET=<openssl rand -hex 32>
+CORS_ORIGINS=https://your-app.vercel.app   # ← fill in after step 3
+PRIVY_APP_ID=clxxxx
+PRIVY_APP_SECRET=…
+TWITTER_BEARER_TOKEN=…
+NODE_ENV=production
+```
+
+> `PORT` is set by Railway automatically — do **not** set it manually.
+
+### 2.3 Initialize the database
+
+After the first deploy, run the Drizzle push to create tables. Either:
+
+- Locally: `DATABASE_URL=… npx drizzle-kit push` from inside `somnia/`, **or**
+- Add it once as a custom Railway command, then remove.
+
+### 2.4 Grab the Railway URL
+
+Railway → Service → **Settings → Networking → Generate Domain**.
+You'll get something like `xenia-production-abcd.up.railway.app`.
+
+**Test it:**
+
+```
+https://xenia-production-abcd.up.railway.app/api/health
+→ { "success": true, "data": { "service": "xenia", … } }
+```
+
+If you see that JSON, the backend is live. ✓
+
+---
+
+## 3. Deploy the frontend on Vercel
+
+### 3.1 Wire the Railway URL into `vercel.json`
+
+Open `somnia/vercel.json` and replace the placeholder:
+
+```diff
+-      "destination": "https://REPLACE_WITH_RAILWAY_DOMAIN/api/:path*"
++      "destination": "https://xenia-production-abcd.up.railway.app/api/:path*"
+```
+
+Commit + push. (Vercel will pick up the change on the next deploy.)
+
+> **Why this works:** Vercel rewrites `/api/*` calls from the browser to Railway invisibly. The frontend code keeps using bare `/api/...` paths — no code change. Cookies and CORS are simpler because the browser thinks every request is same-origin.
+
+### 3.2 Create the Vercel project
+
+1. <https://vercel.com/new> → import the repo
+2. **Root Directory:** `somnia`
+3. **Framework Preset:** Vite (auto-detected from `vercel.json`)
+4. **Build Command:** `vite build` (from `vercel.json`)
+5. **Output Directory:** `dist/public` (from `vercel.json`)
+6. Click **Deploy**
+
+### 3.3 Set Vercel environment variables
+
+Vercel → Project → **Settings → Environment Variables**:
+
+```
+VITE_SOMNIA_CHAIN=testnet
+```
+
+> Only `VITE_*` variables get exposed to the browser. Backend secrets stay on Railway.
+
+### 3.4 Update Railway's `CORS_ORIGINS`
+
+Once Vercel gives you a URL (e.g. `https://xenia.vercel.app`):
+
+1. Go to Railway → Service → Variables
+2. Update: `CORS_ORIGINS=https://xenia.vercel.app,https://your-custom-domain.com`
+3. Railway redeploys automatically.
+
+---
+
+## 4. Smoke test
+
+| Check | Expected |
+|---|---|
+| `https://xenia.vercel.app/` | Landing page renders |
+| `https://xenia.vercel.app/api/health` | JSON response (proxied via Vercel → Railway) |
+| Click **Login with X** on landing | Privy popup, Twitter OAuth, redirect to `/dashboard` |
+| `/dashboard` | Shows your STT balance (read from Somnia via the backend) |
+| Open browser devtools → Application → Cookies | `xenia.sid` cookie set, `Secure`, `SameSite=None` |
+
+If `/api/health` returns 404 on Vercel, the rewrite didn't take effect — recheck `vercel.json` and redeploy.
+
+---
+
+## 5. Optional — Custom domain
+
+| Service | Steps |
+|---|---|
+| **Vercel** | Project → Domains → add `xenia.app` → follow DNS instructions |
+| **Railway** | Service → Settings → Networking → add custom domain (e.g. `api.xenia.app`) |
+
+If you point the API at `api.xenia.app`:
+
+1. Update `vercel.json` rewrite destination → `https://api.xenia.app/api/:path*`
+2. Update Railway `CORS_ORIGINS=https://xenia.app,https://www.xenia.app`
+
+---
+
+## 6. Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Vite build fails on Vercel: *"Could not resolve entry"* | Missing `client/index.html` | Already created in this repo — make sure it was pushed |
+| `/api/*` returns 404 on Vercel | `vercel.json` rewrite still has `REPLACE_WITH_RAILWAY_DOMAIN` | Fill in the real Railway domain, redeploy |
+| `/api/health` works but `/api/auth/user` returns 401 | CORS or session cookie not set | Check `CORS_ORIGINS` on Railway, ensure `NODE_ENV=production` so cookies are `Secure + SameSite=None` |
+| Privy login popup but no session after redirect | `PRIVY_APP_ID` mismatch between frontend (`/api/config/privy`) and Privy dashboard | Verify on Railway, redeploy |
+| `BACKEND_WALLET_PRIVATE_KEY not set` in Railway logs | Env var missing | Add it on Railway → redeploy |
+| `registerWallet` reverts on-chain | Backend wallet is **not** the contract owner | Either redeploy contracts from the backend wallet, or `transferOwnership` to it |
+| Database session errors | Missing `sessions` table | Run `drizzle-kit push` once against `DATABASE_URL` |
+
+---
+
+## 7. Quick checklist for your hackathon submission
+
+- [ ] Contracts deployed → addresses noted
+- [ ] Neon Postgres created → `DATABASE_URL` noted, schema pushed
+- [ ] Privy app created → `PRIVY_APP_ID` + `PRIVY_APP_SECRET` noted
+- [ ] Railway service live → `/api/health` returns 200
+- [ ] `vercel.json` rewrite points at the real Railway domain
+- [ ] Vercel deploy green → landing page loads
+- [ ] `CORS_ORIGINS` on Railway includes the Vercel URL
+- [ ] End-to-end login + dashboard flow works
+- [ ] **Live link to paste in the submission form:** `https://xenia.vercel.app`
