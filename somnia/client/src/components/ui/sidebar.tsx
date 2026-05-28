@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
   type ButtonHTMLAttributes,
+  type CSSProperties,
   type HTMLAttributes,
   type LiHTMLAttributes,
   type ReactNode,
@@ -33,9 +34,11 @@ export function useSidebar(): SidebarContextValue {
 interface SidebarProviderProps {
   children: ReactNode;
   defaultOpen?: boolean;
+  style?: CSSProperties;
+  className?: string;
 }
 
-export function SidebarProvider({ children, defaultOpen = true }: SidebarProviderProps) {
+export function SidebarProvider({ children, defaultOpen = true, style, className }: SidebarProviderProps) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(defaultOpen);
 
@@ -50,7 +53,13 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
     [open, toggle, isMobile],
   );
 
-  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
+  return (
+    <SidebarContext.Provider value={value}>
+      <div className={className} style={{ ...style, display: "contents" }}>
+        {children}
+      </div>
+    </SidebarContext.Provider>
+  );
 }
 
 export const Sidebar = forwardRef<HTMLElement, HTMLAttributes<HTMLElement>>(
