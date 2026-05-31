@@ -26,58 +26,7 @@ import NotFound from "@/pages/not-found";
 import { ExtensionAuthBridge } from "@/components/extension-auth-bridge";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsConditions from "@/pages/terms-conditions";
-
-// ─── Somnia Network Definitions ───────────────────────────────────────────────
-
-const SOMNIA_TESTNET = {
-  id: 50312,
-  name: "Somnia Shannon Testnet",
-  network: "somnia-testnet",
-  nativeCurrency: {
-    name: "Somnia Test Token",
-    symbol: "STT",
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: {
-      http: ["https://dream-rpc.somnia.network"],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: "Somnia Explorer",
-      url: "https://shannon-explorer.somnia.network",
-    },
-  },
-  testnet: true,
-} as const;
-
-const SOMNIA_MAINNET = {
-  id: 50313,
-  name: "Somnia Network",
-  network: "somnia",
-  nativeCurrency: {
-    name: "SOMI",
-    symbol: "SOMI",
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: {
-      http: ["https://mainnet-rpc.somnia.network"],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: "Somnia Explorer",
-      url: "https://explorer.somnia.network",
-    },
-  },
-  testnet: false,
-} as const;
-
-// Use testnet by default; switch to mainnet via env var at build time.
-const DEFAULT_CHAIN =
-  import.meta.env.VITE_SOMNIA_CHAIN === "mainnet" ? SOMNIA_MAINNET : SOMNIA_TESTNET;
+import { DEFAULT_CHAIN, SOMNIA_MAINNET, SOMNIA_TESTNET } from "@/lib/chains";
 
 // ─── Layout Components ────────────────────────────────────────────────────────
 
