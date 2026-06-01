@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError, apiRequest } from "@/lib/queryClient";
+import { useEscrowContract } from "@/lib/useEscrowContract";
+import { explorerTxUrl } from "@/lib/chains";
 
 interface SendTipPayload {
   recipientTwitterId: string;
@@ -21,10 +23,18 @@ interface SendTipPayload {
   tweetId?: string;
 }
 
-interface SendTipResponse {
-  txHash?: string;
-  status?: string;
-  message?: string;
+/** Response from POST /api/tips/send — records the tip and returns its DB id. */
+interface CreateTipResponse {
+  txId: number;
+  recipientTwitterId: string;
+  recipientHandle: string | null;
+  amount: string;
+  type: string;
+}
+
+/** Final result surfaced to the UI after the on-chain tip is confirmed. */
+interface SendTipResult {
+  txHash: string;
 }
 
 const MIN_AMOUNT = 0.001;
@@ -44,6 +54,7 @@ function normalizeHandle(input: string): string {
 export default function SendTipsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { tipOnChain, canWrite } = useEscrowContract();
 
   const [handle, setHandle] = useState("");
   const [amount, setAmount] = useState("");
@@ -67,14 +78,42 @@ export default function SendTipsPage() {
     !Number.isNaN(parsedAmount) &&
     parsedAmount >= MIN_AMOUNT;
 
-  const mutation = useMutation<SendTipResponse, Error, SendTipPayload>({
-    mutationFn: (payload) => apiRequest<SendTipResponse>("POST", "/api/tips/send", payload),
-    onSuccess: (data) => {
+  const mutation = useMutation<SendTipResult, Error, SendTipPayload>({
+    // Three steps: (1) record the intent in the DB, (2) sign the real on-chain
+    // tip from the user's embedded wallet, (3) report the tx hash back so the
+    // backend can mark it confirmed.
+    mutationFn: async (payload) => {
+      // 1. Record the pending tip; backend returns its row id.
+      const created = await apiRequest<CreateTipResponse>(
+        "POST",
+        "/api/tips/send",
+        payload,
+      );
+
+      // 2. Sign + broadcast the on-chain tip. This moves real STT.
+      const txHash = await tipOnChain(payload.recipientTwitterId, payload.amount);
+
+      // 3. Best-effort confirmation, keyed by the row id (the row was inserted
+      //    with txHash=null, so confirming by txHash would never match). The tip
+      //    already settled on-chain, so a failure here is non-fatal.
+      try {
+        await apiRequest("POST", `/api/tips/${created.txId}/confirm`, {
+          txHash,
+          status: "confirmed",
+        });
+      } catch {
+        // Non-fatal: STT already moved; the row just stays unconfirmed.
+      }
+
+      return { txHash };
+    },
+    onSuccess: ({ txHash }) => {
+      const url = explorerTxUrl(txHash);
       toast({
         title: "Tip sent",
-        description: data.txHash
-          ? `Tx: ${data.txHash.slice(0, 10)}...`
-          : "Recipient will be notified shortly.",
+        description: url
+          ? `Confirmed on-chain · ${txHash.slice(0, 10)}…`
+          : `Tx: ${txHash.slice(0, 10)}…`,
         variant: "success",
       });
       setHandle("");
@@ -85,7 +124,7 @@ export default function SendTipsPage() {
     },
     onError: (error) => {
       const message =
-        error instanceof ApiError ? error.message : "Couldn't send the tip. Try again.";
+        error instanceof ApiError ? error.message : error.message || "Couldn't send the tip. Try again.";
       toast({ title: "Tip failed", description: message, variant: "destructive" });
     },
   });
@@ -182,11 +221,15 @@ export default function SendTipsPage() {
               ) : null}
             </div>
 
-            <Button type="submit" disabled={!canSubmit || mutation.isPending} className="w-full">
+            <Button
+              type="submit"
+              disabled={!canSubmit || !canWrite || mutation.isPending}
+              className="w-full"
+            >
               {mutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending...
+                  Confirming on-chain...
                 </>
               ) : (
                 <>
@@ -195,6 +238,11 @@ export default function SendTipsPage() {
                 </>
               )}
             </Button>
+            {!canWrite ? (
+              <p className="text-xs text-muted-foreground text-center">
+                Connecting your wallet… the button activates once it's ready.
+              </p>
+            ) : null}
           </form>
         </CardContent>
       </Card>
