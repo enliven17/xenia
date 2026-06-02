@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Inbox, Loader2 } from "lucide-react";
-import type { PendingClaim } from "@shared/schema";
+import type { PendingClaim, User } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,12 +12,14 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError, apiRequest } from "@/lib/queryClient";
+import { useEscrowContract } from "@/lib/useEscrowContract";
 import { formatRelativeTime, formatSTT } from "@/lib/utils";
 
 type ClaimStatus = "pending" | "claimed" | "refunded" | string;
 
 export default function ClaimsPage() {
   const claimsQuery = useQuery<PendingClaim[]>({ queryKey: ["/api/claims"] });
+  const userQuery = useQuery<User>({ queryKey: ["/api/auth/user"] });
   const claims = claimsQuery.data ?? [];
 
   return (
@@ -50,7 +52,7 @@ export default function ClaimsPage() {
           ) : claims.length === 0 ? (
             <EmptyState />
           ) : (
-            <ClaimsTable claims={claims} />
+            <ClaimsTable claims={claims} user={userQuery.data} />
           )}
         </CardContent>
       </Card>
@@ -74,9 +76,10 @@ function EmptyState() {
 
 interface ClaimsTableProps {
   claims: PendingClaim[];
+  user: User | undefined;
 }
 
-function ClaimsTable({ claims }: ClaimsTableProps) {
+function ClaimsTable({ claims, user }: ClaimsTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -91,7 +94,7 @@ function ClaimsTable({ claims }: ClaimsTableProps) {
         </thead>
         <tbody>
           {claims.map((claim) => (
-            <ClaimRow key={claim.id} claim={claim} />
+            <ClaimRow key={claim.id} claim={claim} user={user} />
           ))}
         </tbody>
       </table>
@@ -101,22 +104,38 @@ function ClaimsTable({ claims }: ClaimsTableProps) {
 
 interface ClaimRowProps {
   claim: PendingClaim;
+  user: User | undefined;
 }
 
-function ClaimRow({ claim }: ClaimRowProps) {
+function ClaimRow({ claim, user }: ClaimRowProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { claimOnChain, canWrite } = useEscrowContract();
 
   const mutation = useMutation<unknown, Error, void>({
-    mutationFn: () => apiRequest("POST", `/api/claims/${claim.id}/mark-claimed`),
+    // First pull the funds out of escrow on-chain (signed by the recipient's
+    // wallet), then record the claim in the DB. The recipient's twitterId must
+    // match the one their wallet was registered under in the Escrow contract.
+    mutationFn: async () => {
+      // Escrow is keyed by the lowercased handle (the only identifier known at
+      // tip time for an unregistered recipient), so claim under the same key.
+      const handleKey = user?.twitterHandle?.trim().toLowerCase();
+      if (!handleKey) throw new Error("You need to be signed in to claim.");
+      // Ensure this wallet is bound to the handle on-chain before claiming.
+      // The backend call is idempotent and waits for the binding to be mined,
+      // so claim() won't revert with "not the registered wallet".
+      await apiRequest("POST", "/api/somnia/register", {});
+      await claimOnChain(handleKey);
+      await apiRequest("POST", `/api/claims/${claim.id}/mark-claimed`);
+    },
     onSuccess: () => {
-      toast({ title: "Tip claimed", variant: "success" });
+      toast({ title: "Tip claimed", description: "STT moved to your wallet.", variant: "success" });
       queryClient.invalidateQueries({ queryKey: ["/api/claims"] });
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
     },
     onError: (error) => {
       const message =
-        error instanceof ApiError ? error.message : "Couldn't claim the tip. Try again.";
+        error instanceof ApiError ? error.message : error.message || "Couldn't claim the tip. Try again.";
       toast({ title: "Claim failed", description: message, variant: "destructive" });
     },
   });
@@ -138,7 +157,7 @@ function ClaimRow({ claim }: ClaimRowProps) {
           <Button
             size="sm"
             onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || !canWrite || !user?.twitterId}
           >
             {mutation.isPending ? (
               <>
