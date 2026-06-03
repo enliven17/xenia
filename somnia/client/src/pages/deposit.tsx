@@ -1,14 +1,28 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { usePrivy } from "@privy-io/react-auth";
-import { Copy, CheckCheck, ExternalLink, Info } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Copy, CheckCheck, ExternalLink, Info, Loader2, Wallet, ShieldCheck } from "lucide-react";
 import type { User } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { ApiError } from "@/lib/queryClient";
+import { useEscrowContract } from "@/lib/useEscrowContract";
+import { explorerTxUrl } from "@/lib/chains";
+
+const ENV_BOT_ADDRESS = (import.meta.env.VITE_XENIA_BOT_ADDRESS as string | undefined) ?? "";
+const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
 export default function Deposit() {
   const [copied, setCopied] = useState(false);
   const { data: user } = useQuery<User>({ queryKey: ["/api/auth/user"] });
+  const { toast } = useToast();
+  const { depositOnChain, authorizeOnChain, canWrite } = useEscrowContract();
 
   const walletAddress = user?.embeddedWalletAddress || user?.linkedWalletAddress;
+
+  const [depositAmount, setDepositAmount] = useState("");
+  const [botAddress, setBotAddress] = useState(ENV_BOT_ADDRESS);
 
   function copyAddress() {
     if (!walletAddress) return;
@@ -16,6 +30,48 @@ export default function Deposit() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
+  function notifyError(error: unknown, fallback: string) {
+    const message =
+      error instanceof ApiError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : fallback;
+    toast({ title: "Transaction failed", description: message, variant: "destructive" });
+  }
+
+  function notifySuccess(title: string, txHash: string) {
+    const url = explorerTxUrl(txHash);
+    toast({
+      title,
+      description: url ? `Confirmed · ${txHash.slice(0, 10)}…` : `Tx: ${txHash.slice(0, 10)}…`,
+      variant: "success",
+    });
+  }
+
+  const depositMutation = useMutation<string, Error, void>({
+    mutationFn: () => depositOnChain(depositAmount),
+    onSuccess: (txHash) => {
+      notifySuccess("Deposit confirmed", txHash);
+      setDepositAmount("");
+    },
+    onError: (error) => notifyError(error, "Couldn't deposit. Try again."),
+  });
+
+  const authorizeMutation = useMutation<string, Error, void>({
+    mutationFn: () => authorizeOnChain(botAddress),
+    onSuccess: (txHash) => notifySuccess("Bot authorized", txHash),
+    onError: (error) => notifyError(error, "Couldn't authorize the bot. Try again."),
+  });
+
+  const canDeposit =
+    canWrite &&
+    !!depositAmount &&
+    /^\d+(\.\d+)?$/.test(depositAmount.trim()) &&
+    Number(depositAmount) > 0;
+
+  const canAuthorize = canWrite && ADDRESS_RE.test(botAddress.trim());
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -58,6 +114,86 @@ export default function Deposit() {
             No wallet connected yet. Link a wallet first.
           </div>
         )}
+      </div>
+
+      {/* On-chain Deposit (Mode B) */}
+      <div className="rounded-xl border p-6 space-y-4">
+        <h2 className="font-semibold flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-primary" />
+          Deposit to Escrow
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Lock STT in the escrow contract so the Xenia bot can tip on your behalf from tweets.
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="deposit-amount">Amount (STT)</Label>
+          <Input
+            id="deposit-amount"
+            type="number"
+            inputMode="decimal"
+            step="0.001"
+            min="0"
+            placeholder="0.500"
+            value={depositAmount}
+            onChange={(e) => setDepositAmount(e.target.value)}
+          />
+        </div>
+        <Button
+          onClick={() => depositMutation.mutate()}
+          disabled={!canDeposit || depositMutation.isPending}
+          className="w-full"
+        >
+          {depositMutation.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Confirming on-chain...
+            </>
+          ) : (
+            "Deposit"
+          )}
+        </Button>
+      </div>
+
+      {/* Authorize Bot (Mode B) */}
+      <div className="rounded-xl border p-6 space-y-4">
+        <h2 className="font-semibold flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          Authorize Xenia Bot
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Let the bot spend from your escrow deposit when you tip via X commands. You stay in
+          control — revoke any time.
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="bot-address">Bot wallet address</Label>
+          <Input
+            id="bot-address"
+            inputMode="text"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="0x…"
+            className="font-mono text-sm"
+            value={botAddress}
+            onChange={(e) => setBotAddress(e.target.value)}
+          />
+          {botAddress && !ADDRESS_RE.test(botAddress.trim()) ? (
+            <p className="text-xs text-destructive">Enter a valid 0x address (40 hex chars).</p>
+          ) : null}
+        </div>
+        <Button
+          onClick={() => authorizeMutation.mutate()}
+          disabled={!canAuthorize || authorizeMutation.isPending}
+          className="w-full"
+        >
+          {authorizeMutation.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Confirming on-chain...
+            </>
+          ) : (
+            "Authorize Bot"
+          )}
+        </Button>
       </div>
 
       {/* Instructions */}
