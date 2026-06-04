@@ -9,6 +9,7 @@ import {
   createTransaction,
   getTransactionsByUser,
   updateTransactionStatus,
+  confirmTransaction,
   getPendingClaimsByRecipient,
   markClaimClaimed,
 } from "./storage";
@@ -16,7 +17,9 @@ import {
   activeChain,
   getPendingBalance,
   getAddressBalance,
-  registerWalletOnChain,
+  ensureWalletRegistered,
+  registerScreenshotOnChain,
+  getProofByTweetId,
 } from "./somnia";
 import { parseEther } from "viem";
 
@@ -187,6 +190,35 @@ router.put("/api/tips/:txHash/status", requireAuth, async (req: Request, res: Re
   }
 });
 
+// Confirm a tip by its DB row id after the client signs the on-chain tip.
+// The row is created (txHash=null) by POST /api/tips/send, then this attaches
+// the real tx hash — confirming by txHash alone would never match the null row.
+router.post("/api/tips/:id/confirm", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { txHash, status } = req.body as { txHash?: string; status?: string };
+    const finalStatus = status ?? "confirmed";
+
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ code: "VALIDATION_010", message: "Valid tip id is required" });
+    }
+    if (!["pending", "confirmed", "failed"].includes(finalStatus)) {
+      return res.status(400).json({
+        code: "VALIDATION_004",
+        message: "status must be pending|confirmed|failed",
+      });
+    }
+    if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+      return res.status(400).json({ code: "VALIDATION_005", message: "Valid txHash is required" });
+    }
+
+    await confirmTransaction(id, txHash, finalStatus);
+    res.status(200).json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ code: "TX_003", message: "Failed to confirm tip" });
+  }
+});
+
 // ─── Pending Claims ───────────────────────────────────────────────────────────
 
 router.get("/api/claims", requireAuth, async (req: Request, res: Response) => {
@@ -307,16 +339,20 @@ router.get("/api/somnia/balance/:address", async (req: Request, res: Response) =
 router.post("/api/somnia/register", requireAuth, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const { twitterId, wallet } = req.body as { twitterId?: string; wallet?: string };
+    const { wallet } = req.body as { wallet?: string };
 
-    const targetTwitterId = twitterId || user.twitterId;
+    // Escrow is keyed by the lowercased Twitter handle — the only identifier a
+    // sender knows at tip time for an unregistered recipient. Always bind the
+    // authenticated user's OWN handle (ignore any body twitterId) so the key
+    // used here matches tip() and claim() everywhere else.
+    const handleKey = String(user.twitterHandle ?? "").trim().toLowerCase();
     const targetWallet =
       wallet || user.embeddedWalletAddress || user.linkedWalletAddress;
 
-    if (!targetTwitterId || !targetWallet) {
+    if (!handleKey || !targetWallet) {
       return res.status(400).json({
         code: "VALIDATION_008",
-        message: "twitterId and wallet are required",
+        message: "twitterHandle and wallet are required",
       });
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(targetWallet)) {
@@ -326,25 +362,98 @@ router.post("/api/somnia/register", requireAuth, async (req: Request, res: Respo
       });
     }
 
-    // Authorization: user can only register their own twitter id
-    if (targetTwitterId !== user.twitterId) {
-      return res.status(403).json({
-        code: "AUTHZ_001",
-        message: "Cannot register a wallet for another user",
-      });
-    }
-
-    const txHash = await registerWalletOnChain(
-      targetTwitterId,
+    const { txHash, alreadyRegistered } = await ensureWalletRegistered(
+      handleKey,
       targetWallet as `0x${string}`
     );
     res.status(200).json({
       success: true,
+      alreadyRegistered,
+      txHash,
+      explorer: txHash
+        ? `${activeChain.blockExplorers?.default.url}/tx/${txHash}`
+        : null,
+    });
+  } catch (err: any) {
+    // A binding conflict (handle already bound to a different wallet) is a
+    // client-actionable 409, not a server fault.
+    if (typeof err?.message === "string" && err.message.includes("different wallet")) {
+      return res.status(409).json({ code: "CHAIN_004", message: err.message });
+    }
+    res.status(500).json({ code: "CHAIN_003", message: "Failed to register wallet on-chain" });
+  }
+});
+
+// ─── Proof of Post (ScreenshotRegistry) ─────────────────────────────────────────
+
+// Register a screenshot proof on-chain. registerScreenshot is onlyOwner on the
+// contract, so this is signed by the backend (registry owner) wallet.
+router.post("/api/proof/register", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { cid, tweetId } = req.body as { cid?: string; tweetId?: string };
+
+    if (!cid || typeof cid !== "string" || cid.trim().length === 0) {
+      return res.status(400).json({
+        code: "VALIDATION_010",
+        message: "cid is required",
+      });
+    }
+    if (!tweetId || typeof tweetId !== "string" || !/^\d+$/.test(tweetId)) {
+      return res.status(400).json({
+        code: "VALIDATION_011",
+        message: "Valid tweetId is required",
+      });
+    }
+
+    const txHash = await registerScreenshotOnChain(cid.trim(), tweetId);
+    res.status(201).json({
+      success: true,
+      cid: cid.trim(),
+      tweetId,
       txHash,
       explorer: `${activeChain.blockExplorers?.default.url}/tx/${txHash}`,
     });
   } catch (err: any) {
-    res.status(500).json({ code: "CHAIN_003", message: "Failed to register wallet on-chain" });
+    // Surface contract-level duplicate rejections as a 409 without leaking internals.
+    const reason: string = err?.shortMessage || err?.message || "";
+    if (/already registered/i.test(reason)) {
+      return res.status(409).json({
+        code: "CHAIN_005",
+        message: "This CID or tweet is already registered on-chain",
+      });
+    }
+    res.status(500).json({ code: "CHAIN_004", message: "Failed to register proof on-chain" });
+  }
+});
+
+// Look up the on-chain proof for a tweet. Public: anyone can verify a proof.
+router.get("/api/proof/:tweetId", async (req: Request, res: Response) => {
+  try {
+    const { tweetId } = req.params;
+    if (!/^\d+$/.test(tweetId)) {
+      return res.status(400).json({
+        code: "VALIDATION_012",
+        message: "Valid tweetId is required",
+      });
+    }
+
+    const proof = await getProofByTweetId(tweetId);
+    if (!proof) {
+      return res.status(404).json({
+        code: "PROOF_001",
+        message: "No proof registered for this tweet",
+      });
+    }
+
+    res.json({
+      tweetId: proof.tweetId,
+      cid: proof.cid,
+      timestamp: proof.timestamp,
+      recorder: proof.recorder,
+      explorer: `${activeChain.blockExplorers?.default.url}/address/${proof.recorder}`,
+    });
+  } catch (err: any) {
+    res.status(500).json({ code: "CHAIN_006", message: "Failed to read proof" });
   }
 });
 

@@ -114,6 +114,44 @@ export const ESCROW_ABI = [
   },
 ] as const;
 
+// ─── ScreenshotRegistry ABI (Proof of Post) ────────────────────────────────────
+// Mirrors contracts/contracts/ScreenshotRegistry.sol exactly.
+
+export const REGISTRY_ABI = [
+  {
+    name: "registerScreenshot",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_cid", type: "string" },
+      { name: "_tweetId", type: "string" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "verifyScreenshot",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_cid", type: "string" }],
+    outputs: [
+      { name: "timestamp", type: "uint256" },
+      { name: "tweetId", type: "string" },
+      { name: "recorder", type: "address" },
+    ],
+  },
+  {
+    name: "getProofByTweetId",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_tweetId", type: "string" }],
+    outputs: [
+      { name: "cid", type: "string" },
+      { name: "timestamp", type: "uint256" },
+      { name: "recorder", type: "address" },
+    ],
+  },
+] as const;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function getEscrowAddress(): `0x${string}` {
@@ -137,7 +175,49 @@ export async function registerWalletOnChain(
     functionName: "registerWallet",
     args: [twitterId, wallet],
   });
+  // Wait for the binding to be mined so a claim() right after won't race a
+  // not-yet-registered state (Somnia finality is sub-second).
+  await publicClient.waitForTransactionReceipt({ hash });
   return hash;
+}
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+/**
+ * Read the wallet currently bound to a twitterId/handle on-chain.
+ * Returns the zero address if no binding exists.
+ */
+export async function getRegisteredWallet(twitterId: string): Promise<`0x${string}`> {
+  const addr = await publicClient.readContract({
+    address: getEscrowAddress(),
+    abi: ESCROW_ABI,
+    functionName: "getRegisteredWallet",
+    args: [twitterId],
+  });
+  return addr as `0x${string}`;
+}
+
+/**
+ * Idempotently bind a handle → wallet on-chain. Safe to call repeatedly:
+ *   - already bound to this wallet → no-op, returns { alreadyRegistered: true }
+ *   - bound to a different wallet  → throws (immutable binding conflict)
+ *   - unbound                      → registers and waits for the receipt
+ */
+export async function ensureWalletRegistered(
+  twitterId: string,
+  wallet: `0x${string}`
+): Promise<{ txHash: `0x${string}` | null; alreadyRegistered: boolean }> {
+  const existing = await getRegisteredWallet(twitterId);
+  if (existing && existing.toLowerCase() !== ZERO_ADDRESS) {
+    if (existing.toLowerCase() === wallet.toLowerCase()) {
+      return { txHash: null, alreadyRegistered: true };
+    }
+    throw new Error(
+      `Handle is already bound to a different wallet (${existing}).`
+    );
+  }
+  const txHash = await registerWalletOnChain(twitterId, wallet);
+  return { txHash, alreadyRegistered: false };
 }
 
 /**
@@ -159,4 +239,89 @@ export async function getPendingBalance(twitterId: string): Promise<string> {
 export async function getAddressBalance(address: `0x${string}`): Promise<string> {
   const raw = await publicClient.getBalance({ address });
   return formatEther(raw);
+}
+
+// ─── Proof of Post (ScreenshotRegistry) ─────────────────────────────────────────
+
+export function getRegistryAddress(): `0x${string}` {
+  const addr = process.env.REGISTRY_CONTRACT_ADDRESS;
+  if (!addr) throw new Error("REGISTRY_CONTRACT_ADDRESS not set");
+  return addr as `0x${string}`;
+}
+
+export interface ProofRecord {
+  cid: string;
+  tweetId: string;
+  timestamp: number;
+  recorder: `0x${string}`;
+  exists: boolean;
+}
+
+/**
+ * Register a screenshot proof on-chain. registerScreenshot is onlyOwner in the
+ * contract, so this MUST be signed by the backend wallet (the registry owner).
+ *
+ * Returns the broadcast transaction hash. Reverts on-chain if the CID or
+ * tweetId was already registered (mirrors the contract's duplicate guards).
+ */
+export async function registerScreenshotOnChain(
+  cid: string,
+  tweetId: string
+): Promise<`0x${string}`> {
+  const walletClient = getWalletClient();
+  const hash = await walletClient.writeContract({
+    address: getRegistryAddress(),
+    abi: REGISTRY_ABI,
+    functionName: "registerScreenshot",
+    args: [cid, tweetId],
+  });
+  return hash;
+}
+
+/**
+ * Verify a proof by its screenshot CID. Returns null when the CID has never
+ * been registered (contract returns timestamp == 0 for unknown CIDs).
+ */
+export async function verifyProof(cid: string): Promise<ProofRecord | null> {
+  const [timestamp, tweetId, recorder] = (await publicClient.readContract({
+    address: getRegistryAddress(),
+    abi: REGISTRY_ABI,
+    functionName: "verifyScreenshot",
+    args: [cid],
+  })) as [bigint, string, `0x${string}`];
+
+  if (timestamp === 0n) return null;
+
+  return {
+    cid,
+    tweetId,
+    timestamp: Number(timestamp),
+    recorder,
+    exists: true,
+  };
+}
+
+/**
+ * Look up the proof registered against a given tweet ID. Returns null when no
+ * screenshot has been registered for that tweet.
+ */
+export async function getProofByTweetId(
+  tweetId: string
+): Promise<ProofRecord | null> {
+  const [cid, timestamp, recorder] = (await publicClient.readContract({
+    address: getRegistryAddress(),
+    abi: REGISTRY_ABI,
+    functionName: "getProofByTweetId",
+    args: [tweetId],
+  })) as [string, bigint, `0x${string}`];
+
+  if (!cid || timestamp === 0n) return null;
+
+  return {
+    cid,
+    tweetId,
+    timestamp: Number(timestamp),
+    recorder,
+    exists: true,
+  };
 }

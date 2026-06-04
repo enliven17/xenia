@@ -162,6 +162,22 @@ export async function updateTransactionStatus(
     .where(eq(transactions.txHash, txHash));
 }
 
+/**
+ * Confirm a tip by its row id: attach the on-chain tx hash and flip status.
+ * Used after the client signs the real Escrow.tip() — the row was inserted with
+ * txHash=null, so confirming by txHash would never match.
+ */
+export async function confirmTransaction(
+  id: number,
+  txHash: string,
+  status: string
+): Promise<void> {
+  await db
+    .update(transactions)
+    .set({ txHash, status })
+    .where(eq(transactions.id, id));
+}
+
 // ─── Pending Claims ───────────────────────────────────────────────────────────
 
 export async function createPendingClaim(
