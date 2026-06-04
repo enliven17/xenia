@@ -10,6 +10,97 @@ const SOMNIA_EXPLORER = "https://shannon-explorer.somnia.network";
 
 let extensionApiKey = null;
 let currentUser = null;
+let escrowAddress = null; // resolved lazily from backend, falls back to constant
+
+// ─── Page-world wallet bridge ───────────────────────────────────────────────────
+// MetaMask injects window.ethereum into the page's main world, which content
+// scripts cannot reach. We inject wallet_inject.js into the page and talk to it
+// over window.postMessage. wallet_inject.js is declared web_accessible.
+
+let bridgeInjected = false;
+const pendingBridgeCalls = new Map(); // id -> { resolve, reject }
+
+function injectWalletBridge() {
+  if (bridgeInjected) return;
+  bridgeInjected = true;
+
+  window.addEventListener("message", (event) => {
+    if (event.source !== window) return;
+    const msg = event.data;
+    if (!msg || msg.source !== "xenia-page") return;
+
+    if (msg.id === "__ready__") {
+      return; // readiness is confirmed per-call via the PROBE handshake
+    }
+    const pending = pendingBridgeCalls.get(msg.id);
+    if (!pending) return;
+    pendingBridgeCalls.delete(msg.id);
+    if (msg.ok) pending.resolve(msg.result);
+    else pending.reject(new Error(msg.error || "Wallet request failed"));
+  });
+
+  const script = document.createElement("script");
+  script.src = chrome.runtime.getURL("src/wallet_inject.js");
+  script.onload = () => script.remove();
+  (document.head || document.documentElement).appendChild(script);
+}
+
+function bridgeCall(payload, timeoutMs = 120000) {
+  return new Promise((resolve, reject) => {
+    const id = `xenia-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const timer = setTimeout(() => {
+      if (pendingBridgeCalls.has(id)) {
+        pendingBridgeCalls.delete(id);
+        reject(new Error("Wallet request timed out"));
+      }
+    }, timeoutMs);
+
+    pendingBridgeCalls.set(id, {
+      resolve: (v) => { clearTimeout(timer); resolve(v); },
+      reject: (e) => { clearTimeout(timer); reject(e); },
+    });
+
+    window.postMessage(Object.assign({ source: "xenia-cs", id }, payload), "*");
+  });
+}
+
+async function hasInjectedWallet() {
+  injectWalletBridge();
+  try {
+    const res = await bridgeCall({ type: "PROBE" }, 4000);
+    return !!(res && res.hasProvider);
+  } catch (_err) {
+    return false;
+  }
+}
+
+/**
+ * Perform a real on-chain Escrow.tip(handle) via the injected wallet.
+ * Returns { txHash, from }.
+ */
+async function sendOnChainTip(handle, amount) {
+  injectWalletBridge();
+
+  if (!escrowAddress) {
+    escrowAddress = await window.fetchEscrowAddress(API_BASE);
+  }
+
+  // Escrow is keyed by the lowercased handle everywhere (web send + claim +
+  // backend register). Normalize here too so a tip from the extension lands in
+  // the same bucket the recipient claims from.
+  const normalizedHandle = String(handle || "").trim().replace(/^@+/, "").toLowerCase();
+  const data = window.encodeTipCall(normalizedHandle);
+  const value = window.sttToWeiHex(amount);
+
+  return bridgeCall({
+    type: "TIP",
+    to: escrowAddress,
+    value,
+    data,
+    chain: window.SOMNIA_CHAIN,
+  });
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -22,6 +113,10 @@ chrome.storage.onChanged.addListener((changes) => {
   if (changes.xeniaApiKey) extensionApiKey = changes.xeniaApiKey.newValue;
   if (changes.xeniaUser) currentUser = changes.xeniaUser.newValue;
 });
+
+// Inject the page-world wallet bridge once, up front, so window.ethereum is
+// reachable by the time the user opens a tip modal.
+injectWalletBridge();
 
 // ─── Tip Button Injection ──────────────────────────────────────────────────────
 
@@ -157,39 +252,78 @@ function openTipModal(tweetId, handle) {
       const amountInput = document.getElementById("xenia-amount");
       const amount = amountInput?.value;
       const statusEl = document.getElementById("xenia-status");
+      const sendBtn = document.getElementById("xenia-send");
+
+      const setStatus = (color, html) => {
+        if (statusEl) { statusEl.style.color = color; statusEl.innerHTML = html; }
+      };
 
       if (!amount || Number(amount) <= 0) {
-        if (statusEl) { statusEl.style.color = "#dc2626"; statusEl.textContent = "Enter a valid amount."; }
+        setStatus("#dc2626", "Enter a valid amount.");
         return;
       }
 
-      const sendBtn = document.getElementById("xenia-send");
-      if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "Sending…"; }
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "Connecting wallet…"; }
+
+      // No injected wallet (MetaMask) → keep the existing Xenia-app fallback.
+      const walletAvailable = await hasInjectedWallet();
+      if (!walletAvailable) {
+        setStatus(
+          "#dc2626",
+          `MetaMask required for on-chain tips. ` +
+            `<a href="${API_BASE}/send-tips?to=${encodeURIComponent(handle)}&amount=${encodeURIComponent(amount)}" ` +
+            `target="_blank" style="color:#7c3aed;font-weight:600;">Open Xenia →</a>`
+        );
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send Tip"; }
+        return;
+      }
 
       try {
-        const resp = await fetch(`${API_BASE}/api/tips/send`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Extension-Key": extensionApiKey,
-          },
-          body: JSON.stringify({
-            recipientTwitterId: handle,
-            recipientHandle: handle,
-            amount,
-            tweetId,
-          }),
-        });
+        if (sendBtn) sendBtn.textContent = "Confirm in wallet…";
+        setStatus("#666", "Awaiting wallet confirmation…");
 
-        if (!resp.ok) throw new Error("Failed to send tip");
+        // 1. Real on-chain Escrow.tip(handle) with value = amount (wei).
+        const { txHash } = await sendOnChainTip(handle, amount);
 
-        if (statusEl) {
-          statusEl.style.color = "#16a34a";
-          statusEl.textContent = `✓ Tip of ${amount} STT sent to @${handle}!`;
+        const explorerUrl = `${SOMNIA_EXPLORER}/tx/${txHash}`;
+        setStatus(
+          "#16a34a",
+          `✓ ${amount} STT sent to @${handle}!<br/>` +
+            `<a href="${explorerUrl}" target="_blank" style="color:#7c3aed;font-weight:600;">View on explorer →</a>`
+        );
+
+        // 2. Record the tip with the real txHash (best-effort, non-blocking UX).
+        if (sendBtn) sendBtn.textContent = "Recording…";
+        try {
+          await fetch(`${API_BASE}/api/tips/send`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Extension-Key": extensionApiKey,
+            },
+            body: JSON.stringify({
+              recipientTwitterId: handle,
+              recipientHandle: handle,
+              amount,
+              tweetId,
+              txHash,
+            }),
+          });
+        } catch (_recordErr) {
+          // On-chain tip already succeeded — surface a soft note, don't fail.
+          setStatus(
+            "#16a34a",
+            `✓ ${amount} STT sent to @${handle}! ` +
+              `<a href="${explorerUrl}" target="_blank" style="color:#7c3aed;font-weight:600;">View →</a><br/>` +
+              `<span style="color:#b45309;">Couldn't sync to Xenia, but the tip is on-chain.</span>`
+          );
         }
-        setTimeout(() => overlay.remove(), 2000);
+
+        if (sendBtn) sendBtn.textContent = "Done";
+        setTimeout(() => overlay.remove(), 4000);
       } catch (err) {
-        if (statusEl) { statusEl.style.color = "#dc2626"; statusEl.textContent = "Failed. Try again."; }
+        const rejected = err && (err.message || "").toLowerCase().includes("user rejected");
+        setStatus("#dc2626", rejected ? "Transaction rejected." : "Transaction failed. Try again.");
         if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send Tip"; }
       }
     });
