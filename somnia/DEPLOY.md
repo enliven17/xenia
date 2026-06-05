@@ -97,12 +97,24 @@ If you see that JSON, the backend is live. ✓
 
 ## 3. Deploy the frontend on Vercel
 
-### 3.1 Wire the Railway URL into `vercel.json`
+### 3.1 Wire the Railway URL into `vercel.json` ⚠️ MUST-DO
 
-Open `somnia/vercel.json` and replace the placeholder:
+> 🚨 **STOP — this is the #1 thing people forget at deploy time.**
+> `somnia/vercel.json` ships with a **placeholder** rewrite target:
+> `https://REPLACE_WITH_RAILWAY_DOMAIN.up.railway.app`.
+> If you deploy the frontend without replacing it, the page loads but **every
+> `/api/*` call fails** (the browser proxies to a domain that doesn't exist),
+> so login and the dashboard are dead on arrival.
+>
+> JSON does not allow comments, so this warning lives here in `DEPLOY.md`
+> instead of inside `vercel.json`. To make sure no one ships the placeholder,
+> **`npm run preflight` hard-fails** while it is still present (see §3.5).
+
+Open `somnia/vercel.json` and replace the placeholder with your **real**
+Railway domain from step 2.4:
 
 ```diff
--      "destination": "https://REPLACE_WITH_RAILWAY_DOMAIN/api/:path*"
+-      "destination": "https://REPLACE_WITH_RAILWAY_DOMAIN.up.railway.app/api/:path*"
 +      "destination": "https://xenia-production-abcd.up.railway.app/api/:path*"
 ```
 
@@ -136,6 +148,30 @@ Once Vercel gives you a URL (e.g. `https://xenia.vercel.app`):
 1. Go to Railway → Service → Variables
 2. Update: `CORS_ORIGINS=https://xenia.vercel.app,https://your-custom-domain.com`
 3. Railway redeploys automatically.
+
+### 3.5 Run the pre-flight gate (before every deploy)
+
+A small zero-dependency script checks the things that silently break a deploy:
+missing/placeholder env vars, the `vercel.json` placeholder, a malformed backend
+wallet key, and whether your contract addresses actually have bytecode on the
+configured Somnia chain.
+
+```powershell
+cd somnia
+npm run preflight
+```
+
+```
+✓ Pre-flight passed. Safe to deploy.      # exit 0 — go
+✗ NOT READY — N blocking issue(s): …      # exit 1 — fix the listed items first
+```
+
+It reads `somnia/.env` (and falls back to real environment variables, matching
+Railway/Vercel). To skip only the live RPC probe (e.g. offline):
+`npm run preflight -- --no-chain`.
+
+> Tip: wire this into CI as a required step before the deploy job so a
+> placeholder or a wrong-chain contract address can never reach production.
 
 ---
 
@@ -172,7 +208,8 @@ If you point the API at `api.xenia.app`:
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Vite build fails on Vercel: *"Could not resolve entry"* | Missing `client/index.html` | Already created in this repo — make sure it was pushed |
-| `/api/*` returns 404 on Vercel | `vercel.json` rewrite still has `REPLACE_WITH_RAILWAY_DOMAIN` | Fill in the real Railway domain, redeploy |
+| `/api/*` returns 404 on Vercel | `vercel.json` rewrite still has `REPLACE_WITH_RAILWAY_DOMAIN` | Fill in the real Railway domain, redeploy. `npm run preflight` catches this before you push. |
+| `npm run preflight` fails on a contract address | Address has no bytecode on the configured chain (wrong address or wrong `SOMNIA_CHAIN_ID`) | Re-check the addresses from step 1 and the chain id; redeploy contracts if needed |
 | `/api/health` works but `/api/auth/user` returns 401 | CORS or session cookie not set | Check `CORS_ORIGINS` on Railway, ensure `NODE_ENV=production` so cookies are `Secure + SameSite=None` |
 | Privy login popup but no session after redirect | `PRIVY_APP_ID` mismatch between frontend (`/api/config/privy`) and Privy dashboard | Verify on Railway, redeploy |
 | `BACKEND_WALLET_PRIVATE_KEY not set` in Railway logs | Env var missing | Add it on Railway → redeploy |
@@ -184,6 +221,7 @@ If you point the API at `api.xenia.app`:
 ## 7. Quick checklist for your hackathon submission
 
 - [ ] Contracts deployed → addresses noted
+- [ ] `npm run preflight` passes (env complete, no placeholder, contracts have on-chain bytecode)
 - [ ] Neon Postgres created → `DATABASE_URL` noted, schema pushed
 - [ ] Privy app created → `PRIVY_APP_ID` + `PRIVY_APP_SECRET` noted
 - [ ] Railway service live → `/api/health` returns 200
@@ -191,4 +229,61 @@ If you point the API at `api.xenia.app`:
 - [ ] Vercel deploy green → landing page loads
 - [ ] `CORS_ORIGINS` on Railway includes the Vercel URL
 - [ ] End-to-end login + dashboard flow works
+- [ ] **A real tip transaction is verifiable on the Somnia explorer** (see §8)
 - [ ] **Live link to paste in the submission form:** `https://xenia.vercel.app`
+
+---
+
+## 8. Real on-chain verification (after deploy)
+
+A green landing page proves the frontend is up — it does **not** prove the app
+actually writes to Somnia. Do this once after deploy to confirm a real tip
+produces a real transaction on-chain.
+
+### 8.1 Explorer URLs
+
+| Chain | `SOMNIA_CHAIN_ID` | Explorer |
+|---|---|---|
+| Testnet | `50312` | <https://shannon-explorer.somnia.network> |
+| Mainnet | `50313` | <https://explorer.somnia.network> |
+
+### 8.2 Confirm the contracts are the live ones
+
+1. Open the explorer, paste your `ESCROW_CONTRACT_ADDRESS` and
+   `REGISTRY_CONTRACT_ADDRESS`.
+2. Each page must show a **Contract** with bytecode and a creation tx — not an
+   empty EOA. (This is exactly what `npm run preflight` probes via `eth_getCode`.)
+3. Open your `BACKEND_WALLET_PRIVATE_KEY` address on the explorer and confirm it
+   holds STT/SOMI for gas. If you can read the contract's `owner()`, confirm it
+   equals this backend wallet — otherwise owner-only calls revert.
+
+### 8.3 Trigger a real tip and trace the transaction
+
+1. In the deployed app, log in with X and send a small test tip (e.g. the
+   minimum amount) to a test recipient.
+2. The backend broadcasts the tx and returns a **transaction hash**. Capture it:
+   - from the success toast / network tab in the browser, **or**
+   - from the Railway runtime logs (the `somnia.ts` calls log the broadcast hash).
+3. Open `https://shannon-explorer.somnia.network/tx/<hash>` and verify:
+   - **Status:** Success
+   - **To:** your Escrow contract address
+   - **From:** your backend wallet address
+   - **Value / logs:** the tip amount and the emitted event (e.g. the
+     deposit/tip event from the Escrow contract)
+
+### 8.4 Cross-check from the chain directly (no UI)
+
+You can confirm the same tx independently with a raw RPC call:
+
+```powershell
+curl -s -X POST https://dream-rpc.somnia.network ^
+  -H "content-type: application/json" ^
+  -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getTransactionReceipt\",\"params\":[\"0xYOUR_TX_HASH\"]}"
+```
+
+A receipt with `"status":"0x1"` and `logs` populated = the tip is genuinely on
+Somnia. `"status":"0x0"` = the tx reverted (most often: backend wallet is not the
+contract owner, or out of gas — see the §6 troubleshooting table).
+
+> Keep one verified tx hash + explorer link handy — it's the strongest proof for
+> a hackathon submission that the app is truly on-chain, not mocked.

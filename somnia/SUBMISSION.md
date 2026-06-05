@@ -12,7 +12,7 @@ Submission date: 2026-05-27
 Xenia turns every post on **X (Twitter)** into a tippable on-chain action.
 A Chrome extension injects a **Tip** button into the X feed; the click triggers a transaction on **Somnia Network** that either lands instantly in the recipient's wallet or is held in an on-chain **escrow** until the recipient signs up — at which point the funds are claimed with one click.
 
-The whole stack — contracts, backend, web dashboard, and extension — is built **specifically around Somnia's strengths**: sub-second finality and sub-cent gas make per-tweet micro-tipping economically viable for the first time, and the high-throughput EVM makes on-chain Proof-of-Post (anchoring screenshot CIDs of tipped tweets) cheap enough to do on every interaction.
+The whole stack — contracts, backend, web dashboard, and extension — is built **specifically around Somnia's strengths**: sub-second finality and sub-cent gas make per-tweet micro-tipping economically viable for the first time, and the high-throughput EVM makes on-chain Proof-of-Post (anchoring screenshot CIDs of tipped tweets) cheap enough to do on every interaction. The `ScreenshotRegistry` contract and its backend registration/verification endpoints are live; automated screenshot capture and CID upload is the next milestone on the roadmap.
 
 ---
 
@@ -36,7 +36,7 @@ Xenia removes both walls:
 - **Two tipping modes, one contract.**
   - **Mode A — Direct tip:** User clicks Tip in the extension → `Escrow.tip(twitterId)` sends STT/SOMI from their wallet.
   - **Mode B — Twitter-command tip:** User pre-deposits funds with `Escrow.deposit()` and `authorize(bot)`. They then tweet `@XeniaBot tip @recipient 5`. The bot calls `tipOnBehalf()` — the bot is *only* allowed to forward tips, never to withdraw funds.
-- **On-chain Proof-of-Post.** Every tipped tweet gets its screenshot CID + tweet ID anchored on Somnia via `ScreenshotRegistry.sol`, giving an immutable record. This is only feasible at Somnia's gas levels.
+- **On-chain Proof-of-Post (in progress).** The `ScreenshotRegistry.sol` contract anchors a screenshot CID + tweet ID on Somnia for an immutable record, and the backend exposes `POST /api/proof/register` (owner-signed) and `GET /api/proof/:tweetId` (public verify) to drive it. Today proofs can be registered and verified through these endpoints; **automated screenshot capture of the tipped tweet and IPFS CID upload is on the roadmap** — until then the CID is supplied to the endpoint rather than generated end-to-end. This per-interaction anchoring is only economically feasible at Somnia's gas levels.
 
 ---
 
@@ -177,6 +177,15 @@ Lightweight on-chain Proof-of-Post.
 | `verifyScreenshot(cid)` | Returns `(timestamp, tweetId, recorder)`. |
 | `getProofByTweetId(tweetId)` | Reverse lookup. |
 | Two-step ownership transfer | Admin. |
+
+**Backend integration.** The contract is wired into the backend via `server/somnia.ts` (`REGISTRY_ABI` + `registerScreenshotOnChain()` / `verifyProof()` / `getProofByTweetId()` helpers, owner-signed by the backend wallet) and exposed through two routes:
+
+| Route | Auth | Description |
+|---|---|---|
+| `POST /api/proof/register` | `requireAuth` | Body `{ cid, tweetId }`. Backend (registry owner) calls `registerScreenshot` on-chain. Returns `txHash` + explorer link. Duplicate CID/tweet → `409 CHAIN_005`. |
+| `GET /api/proof/:tweetId` | public | Reads the on-chain proof for a tweet; `404 PROOF_001` if none registered. |
+
+> **Status:** registration + verification are functional end-to-end against the deployed contract. The remaining roadmap item is **automatic screenshot capture + IPFS CID generation** for tipped tweets, after which the CID will be produced automatically instead of being passed into the register endpoint.
 
 ---
 
