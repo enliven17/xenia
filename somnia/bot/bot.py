@@ -37,6 +37,7 @@ import anthropic
 import requests
 import tweepy
 from web3 import Web3
+from web3.logs import DISCARD
 from eth_account import Account
 from dotenv import load_dotenv
 
@@ -86,7 +87,17 @@ ESCROW_ABI = json.loads("""[
    "inputs":[{"name":"","type":"address"}],"outputs":[{"name":"","type":"uint256"}]},
   {"name":"isAuthorized","type":"function","stateMutability":"view",
    "inputs":[{"name":"user","type":"address"},{"name":"delegate","type":"address"}],
-   "outputs":[{"name":"","type":"bool"}]}
+   "outputs":[{"name":"","type":"bool"}]},
+  {"name":"getRegisteredWallet","type":"function","stateMutability":"view",
+   "inputs":[{"name":"twitterId","type":"string"}],"outputs":[{"name":"","type":"address"}]},
+  {"name":"TipSent","type":"event","anonymous":false,
+   "inputs":[
+     {"name":"sender","type":"address","indexed":true},
+     {"name":"recipientTwitterId","type":"string","indexed":true},
+     {"name":"amount","type":"uint256","indexed":false},
+     {"name":"fee","type":"uint256","indexed":false},
+     {"name":"tipIndex","type":"uint256","indexed":false}
+   ]}
 ]""")
 
 # ─── Clients ──────────────────────────────────────────────────────────────────
@@ -365,7 +376,27 @@ def execute_tip_on_behalf(w3, escrow, sender_address: str, recipient_twitter_id:
     if receipt.status != 1:
         raise RuntimeError(f"Transaction reverted: {tx_hash.hex()}")
 
-    return tx_hash.hex()
+    th = tx_hash.hex()
+    if not th.startswith("0x"):
+        th = "0x" + th
+
+    # If the recipient is unregistered the tip went to escrow → capture the
+    # TipSent event so the backend can index a pending claim for them.
+    escrow_info = None
+    try:
+        events = escrow.events.TipSent().process_receipt(receipt, errors=DISCARD)
+        if events:
+            a = events[0]["args"]
+            escrow_info = {
+                "senderAddress":   Web3.to_checksum_address(a["sender"]),
+                "amount":          str(a["amount"]),
+                "amountFormatted": str(w3.from_wei(a["amount"], "ether")),
+                "escrowIndex":     int(a["tipIndex"]),
+            }
+    except Exception as e:
+        log.warning(f"TipSent parse failed: {e}")
+
+    return th, escrow_info
 
 # ─── Backend helpers ──────────────────────────────────────────────────────────
 
@@ -471,11 +502,13 @@ def handle_mention(ai_client, client, w3, escrow, mention, bot_username: str) ->
     if amount_stt > MAX_TIP_STT:
         return f"Maximum tip is {MAX_TIP_STT} STT."
 
-    # Resolve recipient
-    recipient_handle = recipient_raw.lstrip("@")
-    recipient_id = resolve_twitter_id(client, recipient_handle)
-    if not recipient_id:
+    # Resolve recipient. Escrow is keyed by the LOWERCASED HANDLE everywhere
+    # (tip / claim / registerWallet), so the key sent on-chain must be the
+    # handle — NOT the numeric Twitter id. We still verify it exists on X.
+    recipient_handle = recipient_raw.lstrip("@").lower()
+    if not resolve_twitter_id(client, recipient_handle):
         return f"@{recipient_handle} not found on X."
+    recipient_key = recipient_handle
 
     # Sender lookup
     try:
@@ -495,7 +528,21 @@ def handle_mention(ai_client, client, w3, escrow, mention, bot_username: str) ->
 
     # Execute
     try:
-        tx_hash = execute_tip_on_behalf(w3, escrow, sender_wallet, recipient_id, amount_stt)
+        tx_hash, escrow_info = execute_tip_on_behalf(
+            w3, escrow, sender_wallet, recipient_key, amount_stt
+        )
+        # If it went to escrow (recipient not registered), index a claim so the
+        # recipient can see + claim it from the dashboard.
+        if escrow_info:
+            try:
+                xenia_post("/api/bot/record-claim", {
+                    "recipientTwitterId": recipient_key,
+                    "senderTwitterId":    sender_handle,
+                    "txHash":             tx_hash,
+                    **escrow_info,
+                })
+            except Exception as e:
+                log.warning(f"record-claim failed: {e}")
         return (
             f"✅ {amount_label} sent to @{recipient_handle} on Somnia!\n"
             f"🔗 {EXPLORER_URL}/tx/{tx_hash}"

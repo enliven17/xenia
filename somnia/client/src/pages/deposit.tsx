@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Copy, CheckCheck, ExternalLink, Info, Loader2, Wallet, ShieldCheck } from "lucide-react";
 import type { User } from "@shared/schema";
@@ -21,8 +21,21 @@ export default function Deposit() {
 
   const walletAddress = user?.embeddedWalletAddress || user?.linkedWalletAddress;
 
+  // The bot address (= contract owner / backend wallet) comes from the backend
+  // so users never have to find or paste it. Env var is a build-time override.
+  const { data: network } = useQuery<{ botAddress?: string | null }>({
+    queryKey: ["/api/somnia/network"],
+  });
+
   const [depositAmount, setDepositAmount] = useState("");
   const [botAddress, setBotAddress] = useState(ENV_BOT_ADDRESS);
+  const [botAddressTouched, setBotAddressTouched] = useState(false);
+
+  useEffect(() => {
+    if (!botAddressTouched && !botAddress && network?.botAddress) {
+      setBotAddress(network.botAddress);
+    }
+  }, [network, botAddress, botAddressTouched]);
 
   function copyAddress() {
     if (!walletAddress) return;
@@ -174,7 +187,7 @@ export default function Deposit() {
             placeholder="0x…"
             className="font-mono text-sm"
             value={botAddress}
-            onChange={(e) => setBotAddress(e.target.value)}
+            onChange={(e) => { setBotAddressTouched(true); setBotAddress(e.target.value); }}
           />
           {botAddress && !ADDRESS_RE.test(botAddress.trim()) ? (
             <p className="text-xs text-destructive">Enter a valid 0x address (40 hex chars).</p>

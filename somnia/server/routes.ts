@@ -8,10 +8,14 @@ import {
   setExtensionApiKey,
   createTransaction,
   getTransactionsByUser,
+  getTransactionById,
   updateTransactionStatus,
   confirmTransaction,
   getPendingClaimsByRecipient,
   markClaimClaimed,
+  getPendingUnnotified,
+  markClaimNotified,
+  indexPendingClaim,
 } from "./storage";
 import {
   activeChain,
@@ -20,6 +24,8 @@ import {
   ensureWalletRegistered,
   registerScreenshotOnChain,
   getProofByTweetId,
+  getBotAddress,
+  getEscrowTipFromReceipt,
 } from "./somnia";
 import { parseEther } from "viem";
 
@@ -213,6 +219,34 @@ router.post("/api/tips/:id/confirm", requireAuth, async (req: Request, res: Resp
     }
 
     await confirmTransaction(id, txHash, finalStatus);
+
+    // If this tip landed in escrow (recipient unregistered), index it as a
+    // pending claim so the recipient sees + can claim it. The TipSent event is
+    // only present for escrow tips; a direct transfer produces no claim row.
+    if (finalStatus === "confirmed") {
+      try {
+        const tx = await getTransactionById(id);
+        if (tx && tx.type === "escrow") {
+          const escrow = await getEscrowTipFromReceipt(txHash as `0x${string}`);
+          if (escrow) {
+            const senderUser = await getUserByTwitterId(tx.fromTwitterId);
+            await indexPendingClaim({
+              recipientTwitterId: tx.toTwitterId,
+              senderTwitterId: senderUser?.twitterHandle || tx.fromTwitterId,
+              senderAddress: escrow.senderAddress,
+              amount: escrow.amount,
+              amountFormatted: escrow.amountFormatted,
+              txHash,
+              escrowIndex: escrow.escrowIndex,
+              status: "pending",
+            });
+          }
+        }
+      } catch (indexErr) {
+        // Non-fatal: the tip settled on-chain; indexing can be retried/backfilled.
+      }
+    }
+
     res.status(200).json({ success: true });
   } catch (err: any) {
     res.status(500).json({ code: "TX_003", message: "Failed to confirm tip" });
@@ -303,6 +337,8 @@ router.get("/api/somnia/network", (_req: Request, res: Response) => {
       escrow: process.env.ESCROW_CONTRACT_ADDRESS ?? null,
       registry: process.env.REGISTRY_CONTRACT_ADDRESS ?? null,
     },
+    // Address users authorize() for Mode B bot-delegated tipping.
+    botAddress: getBotAddress(),
   });
 });
 
@@ -454,6 +490,90 @@ router.get("/api/proof/:tweetId", async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     res.status(500).json({ code: "CHAIN_006", message: "Failed to read proof" });
+  }
+});
+
+// ─── Bot (shared-key auth) ──────────────────────────────────────────────────
+
+// The Twitter bot authenticates with a shared secret sent as X-Extension-Key,
+// matched against XENIA_BOT_API_KEY. Never falls open: if the env is unset,
+// every bot request is rejected.
+function isBotRequest(req: Request): boolean {
+  const expected = process.env.XENIA_BOT_API_KEY;
+  const got = req.header("X-Extension-Key");
+  return !!expected && !!got && got === expected;
+}
+
+router.get("/api/bot/pending-notifications", async (req: Request, res: Response) => {
+  if (!isBotRequest(req)) {
+    return res.status(401).json({ code: "AUTH_003", message: "Invalid bot key" });
+  }
+  try {
+    const claims = await getPendingUnnotified();
+    res.json(claims);
+  } catch (err: any) {
+    res.status(500).json({ code: "BOT_001", message: "Failed to fetch notifications" });
+  }
+});
+
+router.post("/api/bot/claims/:id/notified", async (req: Request, res: Response) => {
+  if (!isBotRequest(req)) {
+    return res.status(401).json({ code: "AUTH_003", message: "Invalid bot key" });
+  }
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ code: "VALIDATION_013", message: "Valid claim id is required" });
+    }
+    await markClaimNotified(id);
+    res.status(200).json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ code: "BOT_002", message: "Failed to mark notified" });
+  }
+});
+
+// Mode B: the bot reports an escrow tip it made via tipOnBehalf so the
+// recipient sees + can claim it. Idempotent on (txHash, escrowIndex).
+router.post("/api/bot/record-claim", async (req: Request, res: Response) => {
+  if (!isBotRequest(req)) {
+    return res.status(401).json({ code: "AUTH_003", message: "Invalid bot key" });
+  }
+  try {
+    const b = req.body as Record<string, unknown>;
+    const recipientTwitterId = String(b.recipientTwitterId ?? "").trim().toLowerCase();
+    const senderTwitterId = String(b.senderTwitterId ?? "").trim();
+    const senderAddress = String(b.senderAddress ?? "");
+    const amount = String(b.amount ?? "");
+    const amountFormatted = String(b.amountFormatted ?? "");
+    const txHash = String(b.txHash ?? "");
+    const escrowIndex = Number(b.escrowIndex);
+
+    if (!recipientTwitterId || !senderTwitterId || !amount || !amountFormatted) {
+      return res.status(400).json({ code: "VALIDATION_014", message: "Missing claim fields" });
+    }
+    if (!/^0x[a-fA-F0-9]{40}$/.test(senderAddress)) {
+      return res.status(400).json({ code: "VALIDATION_015", message: "Valid senderAddress required" });
+    }
+    if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+      return res.status(400).json({ code: "VALIDATION_016", message: "Valid txHash required" });
+    }
+    if (!Number.isInteger(escrowIndex) || escrowIndex < 0) {
+      return res.status(400).json({ code: "VALIDATION_017", message: "Valid escrowIndex required" });
+    }
+
+    const claim = await indexPendingClaim({
+      recipientTwitterId,
+      senderTwitterId,
+      senderAddress: senderAddress as `0x${string}`,
+      amount,
+      amountFormatted,
+      txHash,
+      escrowIndex,
+      status: "pending",
+    });
+    res.status(200).json({ success: true, created: !!claim });
+  } catch (err: any) {
+    res.status(500).json({ code: "BOT_003", message: "Failed to record claim" });
   }
 });
 

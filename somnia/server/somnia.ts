@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, parseEther, formatEther } from "viem";
+import { createPublicClient, createWalletClient, http, parseEther, formatEther, parseEventLogs } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { defineChain } from "viem";
 
@@ -112,6 +112,19 @@ export const ESCROW_ABI = [
     inputs: [{ name: "twitterId", type: "string" }],
     outputs: [],
   },
+  {
+    // Emitted by tip() and tipOnBehalf() only when the tip goes to escrow
+    // (recipient not yet registered). Carries the escrow array index.
+    name: "TipSent",
+    type: "event",
+    inputs: [
+      { name: "sender", type: "address", indexed: true },
+      { name: "recipientTwitterId", type: "string", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+      { name: "fee", type: "uint256", indexed: false },
+      { name: "tipIndex", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
 // ─── ScreenshotRegistry ABI (Proof of Post) ────────────────────────────────────
@@ -158,6 +171,19 @@ export function getEscrowAddress(): `0x${string}` {
   const addr = process.env.ESCROW_CONTRACT_ADDRESS;
   if (!addr) throw new Error("ESCROW_CONTRACT_ADDRESS not set");
   return addr as `0x${string}`;
+}
+
+/**
+ * The backend/bot wallet address (derived from BACKEND_WALLET_PRIVATE_KEY).
+ * This is the address users must authorize() for Mode B bot-delegated tipping.
+ * Returns null if the key isn't configured.
+ */
+export function getBotAddress(): `0x${string}` | null {
+  try {
+    return getBackendWallet().address;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -239,6 +265,38 @@ export async function getPendingBalance(twitterId: string): Promise<string> {
 export async function getAddressBalance(address: `0x${string}`): Promise<string> {
   const raw = await publicClient.getBalance({ address });
   return formatEther(raw);
+}
+
+export interface EscrowTipLog {
+  senderAddress: `0x${string}`;
+  amount: string;          // net amount, wei (string)
+  amountFormatted: string; // net amount, STT
+  escrowIndex: number;
+}
+
+/**
+ * Inspect a tip/tipOnBehalf receipt for a TipSent event. Returns the escrow
+ * details if the tip went to escrow (recipient unregistered), or null for a
+ * direct transfer (no escrow row needed). Used to index pending claims.
+ */
+export async function getEscrowTipFromReceipt(
+  txHash: `0x${string}`
+): Promise<EscrowTipLog | null> {
+  const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+  const logs = parseEventLogs({
+    abi: ESCROW_ABI,
+    eventName: "TipSent",
+    logs: receipt.logs,
+  });
+  const ev = logs[0] as any;
+  if (!ev) return null;
+  const amount = ev.args.amount as bigint;
+  return {
+    senderAddress: ev.args.sender as `0x${string}`,
+    amount: amount.toString(),
+    amountFormatted: formatEther(amount),
+    escrowIndex: Number(ev.args.tipIndex as bigint),
+  };
 }
 
 // ─── Proof of Post (ScreenshotRegistry) ─────────────────────────────────────────

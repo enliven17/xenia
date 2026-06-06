@@ -118,6 +118,11 @@ export async function createTransaction(data: InsertTransaction): Promise<Transa
   return inserted[0];
 }
 
+export async function getTransactionById(id: number): Promise<Transaction | null> {
+  const rows = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
 export async function getTransactionsByUser(
   twitterId: string,
   limit = 50
@@ -185,6 +190,27 @@ export async function createPendingClaim(
 ): Promise<PendingClaim> {
   const inserted = await db.insert(pendingClaims).values(data).returning();
   return inserted[0];
+}
+
+/** Dedup guard: a claim is uniquely identified by its tx hash + escrow index. */
+export async function pendingClaimExists(
+  txHash: string,
+  escrowIndex: number
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: pendingClaims.id })
+    .from(pendingClaims)
+    .where(and(eq(pendingClaims.txHash, txHash), eq(pendingClaims.escrowIndex, escrowIndex)))
+    .limit(1);
+  return rows.length > 0;
+}
+
+/** Idempotently index an escrow tip as a pending claim. No-op if it exists. */
+export async function indexPendingClaim(
+  data: InsertPendingClaim
+): Promise<PendingClaim | null> {
+  if (await pendingClaimExists(data.txHash, data.escrowIndex)) return null;
+  return createPendingClaim(data);
 }
 
 export async function getPendingClaimsByRecipient(
