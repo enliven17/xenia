@@ -54,6 +54,12 @@ log = logging.getLogger("xenia-bot")
 XENIA_API_BASE   = os.getenv("XENIA_API_BASE", "https://xenia.app").rstrip("/")
 BOT_API_KEY      = os.getenv("XENIA_BOT_API_KEY", "")
 ANTHROPIC_KEY    = os.getenv("ANTHROPIC_API_KEY", "")
+GEMINI_KEY       = os.getenv("GEMINI_API_KEY", "")
+# Which LLM parses tip commands: "auto" (prefer Gemini, then Claude), "gemini",
+# "claude", or "regex" (no LLM). Falls back to regex if the chosen one is down.
+AI_PROVIDER      = os.getenv("AI_PROVIDER", "auto").lower()
+GEMINI_MODEL     = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+CLAUDE_MODEL     = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
 POLL_INTERVAL    = int(os.getenv("POLL_INTERVAL", "60"))
 RPC_URL          = os.getenv("SOMNIA_RPC_URL", "https://dream-rpc.somnia.network")
 ESCROW_ADDR      = os.getenv("ESCROW_CONTRACT_ADDRESS", "")
@@ -85,10 +91,74 @@ ESCROW_ABI = json.loads("""[
 
 # ─── Clients ──────────────────────────────────────────────────────────────────
 
-def make_claude():
-    if not ANTHROPIC_KEY:
-        return None
-    return anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+class AIClient:
+    """
+    Unified LLM client for tip-command parsing. Wraps either Google Gemini or
+    Anthropic Claude behind a single .parse() method so the rest of the bot is
+    provider-agnostic. parse() returns the model's raw text (expected JSON) or
+    None on any error — callers fall back to regex.
+    """
+
+    def __init__(self, provider: str, client, model: str):
+        self.provider = provider
+        self._client = client
+        self.model = model
+        self.label = f"{provider}:{model}"
+
+    def parse(self, system_prompt: str, user_text: str) -> str | None:
+        try:
+            if self.provider == "gemini":
+                model = self._client.GenerativeModel(
+                    model_name=self.model,
+                    system_instruction=system_prompt,
+                    generation_config={
+                        "response_mime_type": "application/json",
+                        "max_output_tokens": 256,
+                    },
+                )
+                resp = model.generate_content(user_text)
+                return (resp.text or "").strip()
+            # anthropic
+            resp = self._client.messages.create(
+                model=self.model,
+                max_tokens=256,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_text}],
+            )
+            return resp.content[0].text.strip()
+        except Exception as e:  # noqa: BLE001 — never let the LLM crash the bot
+            log.warning(f"AI parse failed ({self.label}): {e}")
+            return None
+
+    def ping(self) -> bool:
+        return self.parse("Reply with the single word OK.", "ping") is not None
+
+
+def make_ai() -> "AIClient | None":
+    """Build the configured LLM client, or None to run on regex only."""
+    provider = AI_PROVIDER
+    if provider == "auto":
+        provider = "gemini" if GEMINI_KEY else ("claude" if ANTHROPIC_KEY else "regex")
+
+    if provider == "gemini":
+        if not GEMINI_KEY:
+            log.warning("AI_PROVIDER=gemini but GEMINI_API_KEY is missing")
+            return None
+        try:
+            import google.generativeai as genai
+        except ImportError:
+            log.error("google-generativeai not installed (pip install -r requirements.txt)")
+            return None
+        genai.configure(api_key=GEMINI_KEY)
+        return AIClient("gemini", genai, GEMINI_MODEL)
+
+    if provider == "claude":
+        if not ANTHROPIC_KEY:
+            log.warning("AI_PROVIDER=claude but ANTHROPIC_API_KEY is missing")
+            return None
+        return AIClient("claude", anthropic.Anthropic(api_key=ANTHROPIC_KEY), CLAUDE_MODEL)
+
+    return None  # regex-only
 
 def make_web3():
     w3 = Web3(Web3.HTTPProvider(RPC_URL))
@@ -202,42 +272,45 @@ def parse_with_regex(text: str):
         return None
     return {"recipient": f"@{m.group(1)}", "amount": float(amount), "currency": "STT"}
 
-def parse_command(claude_client, tweet_text: str, bot_username: str) -> dict | None:
+def _extract_json(raw: str) -> str:
+    """Strip optional ```json fences so json.loads works for any provider."""
+    s = raw.strip()
+    if s.startswith("```"):
+        s = re.sub(r"^```(?:json)?\s*", "", s)
+        s = re.sub(r"\s*```$", "", s)
+    return s.strip()
+
+
+def parse_command(ai_client, tweet_text: str, bot_username: str) -> dict | None:
     """
     Returns parsed command dict or None.
-    Uses Claude if available, regex as fallback.
+    Uses the configured LLM (Gemini or Claude) if available, regex as fallback.
     """
     # Strip the bot mention from the text
     clean = re.sub(rf"@{re.escape(bot_username)}", "", tweet_text, flags=re.IGNORECASE).strip()
 
-    if claude_client:
-        try:
-            resp = claude_client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=256,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": clean}],
-            )
-            raw = resp.content[0].text.strip()
-            data = json.loads(raw)
+    if ai_client:
+        raw = ai_client.parse(SYSTEM_PROMPT, clean)
+        if raw:
+            try:
+                data = json.loads(_extract_json(raw))
 
-            if not data.get("is_tip") or data.get("intent") != "tip":
-                # Not a tip — check if it's something else we handle
-                if data.get("intent") == "check_balance":
-                    return {"intent": "check_balance"}
-                if data.get("intent") == "help":
-                    return {"intent": "help"}
-                return None
+                if not data.get("is_tip") or data.get("intent") != "tip":
+                    # Not a tip — check if it's something else we handle
+                    if data.get("intent") == "check_balance":
+                        return {"intent": "check_balance"}
+                    if data.get("intent") == "help":
+                        return {"intent": "help"}
+                    return None
 
-            return {
-                "intent":    "tip",
-                "recipient": data.get("recipient"),
-                "amount":    data.get("amount"),
-                "currency":  data.get("currency") or "STT",
-            }
-
-        except (json.JSONDecodeError, KeyError, anthropic.APIError) as e:
-            log.warning(f"Claude parse failed ({e}), falling back to regex")
+                return {
+                    "intent":    "tip",
+                    "recipient": data.get("recipient"),
+                    "amount":    data.get("amount"),
+                    "currency":  data.get("currency") or "STT",
+                }
+            except (json.JSONDecodeError, KeyError, TypeError) as e:
+                log.warning(f"AI parse JSON invalid ({e}), falling back to regex")
 
     # Regex fallback
     parsed = parse_with_regex(clean)
@@ -324,14 +397,14 @@ def resolve_twitter_id(client, handle: str) -> str | None:
 
 # ─── Mention handler ──────────────────────────────────────────────────────────
 
-def handle_mention(claude_client, client, w3, escrow, mention, bot_username: str) -> str | None:
+def handle_mention(ai_client, client, w3, escrow, mention, bot_username: str) -> str | None:
     text      = mention.text or ""
     author_id = str(mention.author_id)
 
     log.info(f"Mention [{mention.id}] from {author_id}: {text!r}")
 
     # Parse command
-    cmd = parse_command(claude_client, text, bot_username)
+    cmd = parse_command(ai_client, text, bot_username)
     if not cmd:
         return None
 
@@ -438,8 +511,8 @@ def handle_mention(claude_client, client, w3, escrow, mention, bot_username: str
 # ─── Mention poller ───────────────────────────────────────────────────────────
 
 class MentionPoller:
-    def __init__(self, claude_client, twitter_client, w3, escrow, bot_user_id, bot_username):
-        self.claude     = claude_client
+    def __init__(self, ai_client, twitter_client, w3, escrow, bot_user_id, bot_username):
+        self.ai         = ai_client
         self.client     = twitter_client
         self.w3         = w3
         self.escrow     = escrow
@@ -468,7 +541,7 @@ class MentionPoller:
         for mention in reversed(resp.data):
             self.since_id = max(self.since_id or 0, int(mention.id))
             reply = handle_mention(
-                self.claude, self.client, self.w3, self.escrow,
+                self.ai, self.client, self.w3, self.escrow,
                 mention, self.bot_name,
             )
             if reply:
@@ -524,7 +597,7 @@ def process_notifications(client):
 
 # ─── Healthcheck ──────────────────────────────────────────────────────────────
 
-def healthcheck(claude_client, twitter_client, w3):
+def healthcheck(ai_client, twitter_client, w3):
     ok = True
 
     # Backend
@@ -540,19 +613,14 @@ def healthcheck(claude_client, twitter_client, w3):
     else:
         log.info(f"Somnia OK — block #{w3.eth.block_number}")
 
-    # Claude
-    if claude_client:
-        try:
-            resp = claude_client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=10,
-                messages=[{"role": "user", "content": "ping"}],
-            )
-            log.info("Claude OK")
-        except Exception as e:
-            log.warning(f"Claude unavailable ({e}) — regex fallback active")
+    # LLM (Gemini / Claude)
+    if ai_client:
+        if ai_client.ping():
+            log.info(f"AI OK — {ai_client.label}")
+        else:
+            log.warning(f"AI unavailable ({ai_client.label}) — regex fallback active")
     else:
-        log.warning("No ANTHROPIC_API_KEY — regex fallback active")
+        log.warning("No LLM configured (set GEMINI_API_KEY or ANTHROPIC_API_KEY) — regex fallback active")
 
     # Twitter
     try:
@@ -581,19 +649,19 @@ def main():
         if not var:
             log.error(f"{name} not set"); sys.exit(1)
 
-    claude  = make_claude()
+    ai      = make_ai()
     w3      = make_web3()
     escrow  = make_escrow(w3)
     twitter = make_twitter()
 
-    ok, bot_id, bot_name = healthcheck(claude, twitter, w3)
+    ok, bot_id, bot_name = healthcheck(ai, twitter, w3)
     if not ok:
         sys.exit(1)
 
     log.info(f"Bot wallet: {Account.from_key(BOT_PRIVATE_KEY).address}")
     log.info("Running. Ctrl+C to stop.")
 
-    poller = MentionPoller(claude, twitter, w3, escrow, bot_id, bot_name)
+    poller = MentionPoller(ai, twitter, w3, escrow, bot_id, bot_name)
     tick   = 0
 
     while True:
