@@ -339,15 +339,19 @@ function getProfileHandle() {
 function createProfileTipButton(handle) {
   const btn = document.createElement("button");
   btn.className = "xenia-profile-tip";
-  btn.textContent = `Tip @${handle}`;
+  btn.textContent = "Tip";
+  btn.title = `Tip @${handle} via Xenia`;
+  // Match X's native Follow button: a 32px rounded pill in the system UI font
+  // so it sits cleanly and aligned in the profile header action row.
   btn.style.cssText = `
-    display:inline-flex; align-items:center; align-self:center; height:32px; padding:0 14px; margin-right:8px;
-    border-radius:0; border:1px solid #F5AFAF; background:#F5AFAF; color:#2D2D2D; cursor:pointer;
-    font-size:13px; font-weight:700; letter-spacing:0.02em; line-height:1;
-    vertical-align:middle; box-sizing:border-box; flex:0 0 auto;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    display:inline-flex; align-items:center; justify-content:center; align-self:center;
+    height:32px; min-height:32px; padding:0 16px; margin:0 8px 0 0; border-radius:9999px;
+    border:0; background:#F5AFAF; color:#0F0D0D; cursor:pointer;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px; font-weight:700; line-height:32px; white-space:nowrap; vertical-align:middle;
+    box-sizing:border-box; flex:0 0 auto; transition:background 0.15s;
   `;
-  btn.addEventListener("mouseenter", () => { btn.style.background = "#F9DFDF"; });
+  btn.addEventListener("mouseenter", () => { btn.style.background = "#EE9AA0"; });
   btn.addEventListener("mouseleave", () => { btn.style.background = "#F5AFAF"; });
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -360,15 +364,22 @@ function createProfileTipButton(handle) {
 function injectProfileTipButton() {
   const handle = getProfileHandle();
   if (!handle) return;
-  // Anchor beside the profile's action buttons (the "..." kebab / Follow).
-  const anchor =
-    document.querySelector("[data-testid='userActions']") ||
-    document.querySelector("[data-testid$='-follow']") ||
-    document.querySelector("[data-testid='placementTracking']");
-  if (!anchor || !anchor.parentElement) return;
-  const container = anchor.parentElement;
-  if (container.querySelector(".xenia-profile-tip")) return;
-  container.insertBefore(createProfileTipButton(handle), container.firstChild);
+
+  const userActions = document.querySelector("[data-testid='userActions']");
+  if (!userActions) return;
+
+  // Walk up to the actual action ROW — the flex container that holds the
+  // "…", DM and Follow buttons — so our pill aligns with them. Inserting into
+  // the small wrapper around "…" is what made it sit out of line.
+  let row = userActions.parentElement;
+  for (let i = 0; i < 4 && row; i++) {
+    if (row.querySelector("[data-testid$='-follow'], [data-testid='placementTracking']")) break;
+    row = row.parentElement;
+  }
+  if (!row) return;
+  if (row.querySelector(".xenia-profile-tip")) return;
+
+  row.insertBefore(createProfileTipButton(handle), row.firstChild);
 }
 
 // ─── Observe DOM changes ───────────────────────────────────────────────────────
