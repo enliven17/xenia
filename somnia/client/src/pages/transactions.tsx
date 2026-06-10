@@ -22,13 +22,13 @@ function StatusBadge({ status }: { status: string }) {
 
 function TypeBadge({ type }: { type: string }) {
   const map: Record<string, string> = {
-    direct:  "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400",
+    direct:  "bg-primary/20 text-foreground border border-primary/40",
     escrow:  "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
     claim:   "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
     refund:  "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
   };
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${map[type] ?? "bg-muted text-muted-foreground"}`}>
+    <span className={`inline-flex rounded-none px-2 py-0.5 text-xs font-medium capitalize ${map[type] ?? "bg-muted text-muted-foreground"}`}>
       {type}
     </span>
   );

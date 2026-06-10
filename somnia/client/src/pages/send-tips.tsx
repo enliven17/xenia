@@ -145,7 +145,7 @@ export default function SendTipsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5 text-violet-500" />
+            <Send className="h-5 w-5 text-primary" />
             Send a tip
           </CardTitle>
           <CardDescription>
@@ -280,7 +280,7 @@ interface StepProps {
 function Step({ number, title, children }: StepProps) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-semibold text-white">
+      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center bg-primary text-xs font-semibold text-primary-foreground">
         {number}
       </div>
       <div>

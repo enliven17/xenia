@@ -128,6 +128,42 @@ function extractEmbeddedWallet(privyUser: {
   return typeof addr === "string" ? addr : null;
 }
 
+function extractEmailFromPrivy(privyUser: {
+  linkedAccounts?: Array<Record<string, unknown>>;
+}): string | null {
+  const linked = privyUser.linkedAccounts ?? [];
+  const email = linked.find((a) => a.type === "email");
+  const addr = email?.address;
+  return typeof addr === "string" ? addr : null;
+}
+
+interface Identity {
+  twitterId: string;
+  twitterHandle: string;
+  twitterName: string | null;
+  twitterAvatar: string | null;
+}
+
+/**
+ * Demo mode: X (Twitter) login is preferred but NOT required. When there's no
+ * linked Twitter account, derive a stable identity from the wallet / email /
+ * Privy id so the user still gets an account and dashboard access.
+ */
+function buildFallbackIdentity(
+  privyUser: { linkedAccounts?: Array<Record<string, unknown>> },
+  privyUserId: string,
+  embedded: string | null,
+): Identity {
+  const email = extractEmailFromPrivy(privyUser);
+  const twitterId = (embedded ?? privyUserId).toLowerCase();
+  const twitterHandle = email
+    ? email.split("@")[0]
+    : embedded
+      ? `${embedded.slice(0, 6)}…${embedded.slice(-4)}`
+      : `guest_${privyUserId.slice(-6)}`;
+  return { twitterId, twitterHandle, twitterName: null, twitterAvatar: null };
+}
+
 /**
  * Find an existing user by Privy id, or create one from the Privy profile
  * (must have a linked Twitter/X account).
@@ -150,42 +186,47 @@ async function upsertUserFromPrivy(privyUserId: string): Promise<User | null> {
     return null;
   }
 
-  const twitter = extractTwitterFromPrivyUser(
-    privyUser as unknown as {
-      linkedAccounts?: Array<Record<string, unknown>>;
-    },
-  );
-  if (!twitter) {
-    // Login required Twitter — refuse.
-    return null;
-  }
-
   const embedded = extractEmbeddedWallet(
     privyUser as unknown as {
       linkedAccounts?: Array<Record<string, unknown>>;
     },
   );
 
-  // 3) Maybe a user already exists for this Twitter id (linked before Privy migration).
-  const byTwitter = await db
+  // X (Twitter) is preferred but not required in demo mode — fall back to a
+  // wallet/email-derived identity so non-Twitter logins still get an account.
+  const twitter = extractTwitterFromPrivyUser(
+    privyUser as unknown as {
+      linkedAccounts?: Array<Record<string, unknown>>;
+    },
+  );
+  const identity: Identity =
+    twitter ??
+    buildFallbackIdentity(
+      privyUser as unknown as { linkedAccounts?: Array<Record<string, unknown>> },
+      privyUserId,
+      embedded,
+    );
+
+  // 3) Maybe a user already exists for this identity (linked before Privy migration).
+  const byId = await db
     .select()
     .from(users)
-    .where(eq(users.twitterId, twitter.twitterId))
+    .where(eq(users.twitterId, identity.twitterId))
     .limit(1);
 
-  if (byTwitter[0]) {
+  if (byId[0]) {
     const updated = await db
       .update(users)
       .set({
         privyId: privyUserId,
-        twitterHandle: twitter.twitterHandle,
-        twitterName: twitter.twitterName,
-        twitterAvatar: twitter.twitterAvatar,
+        twitterHandle: identity.twitterHandle,
+        twitterName: identity.twitterName,
+        twitterAvatar: identity.twitterAvatar,
         embeddedWalletAddress:
-          embedded ?? byTwitter[0].embeddedWalletAddress ?? null,
+          embedded ?? byId[0].embeddedWalletAddress ?? null,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, byTwitter[0].id))
+      .where(eq(users.id, byId[0].id))
       .returning();
     return updated[0] ?? null;
   }
@@ -194,10 +235,10 @@ async function upsertUserFromPrivy(privyUserId: string): Promise<User | null> {
   const inserted = await db
     .insert(users)
     .values({
-      twitterId: twitter.twitterId,
-      twitterHandle: twitter.twitterHandle,
-      twitterName: twitter.twitterName,
-      twitterAvatar: twitter.twitterAvatar,
+      twitterId: identity.twitterId,
+      twitterHandle: identity.twitterHandle,
+      twitterName: identity.twitterName,
+      twitterAvatar: identity.twitterAvatar,
       privyId: privyUserId,
       embeddedWalletAddress: embedded,
       extensionApiKey: generateExtensionApiKey(),
@@ -238,7 +279,7 @@ export async function requireAuth(
         error: {
           code: "AUTH_002",
           message:
-            "Twitter/X account is required. Link your X account via Privy and try again.",
+            "Couldn't load your Privy profile. Please sign out and sign in again.",
         },
       });
       return;

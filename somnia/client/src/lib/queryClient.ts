@@ -38,10 +38,17 @@ async function parseResponse<T>(res: Response): Promise<T> {
   const body = isJson ? await res.json().catch(() => null) : await res.text().catch(() => "");
 
   if (!res.ok) {
+    // Backend errors come back as { error: { code, message } } or { error: "..." }.
+    let nested: string | null = null;
+    if (isJson && body && typeof body === "object" && "error" in body) {
+      const e = (body as { error: unknown }).error;
+      nested =
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message: unknown }).message)
+          : String(e);
+    }
     const message =
-      (isJson && body && typeof body === "object" && "error" in body
-        ? String((body as { error: unknown }).error)
-        : null) ||
+      nested ||
       (typeof body === "string" && body) ||
       `Request failed with status ${res.status}`;
     throw new ApiError(message, res.status, body);

@@ -154,13 +154,15 @@ function createTipButton(tweetId, handle) {
     <span>Tip</span>
   `;
   btn.style.cssText = `
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 4px 10px; border-radius: 20px; border: 1px solid #7c3aed33;
-    background: transparent; color: #7c3aed; cursor: pointer;
-    font-size: 13px; font-family: inherit; transition: background 0.15s;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 11px; border-radius: 0; border: 1px solid #F5AFAF;
+    background: transparent; color: #C07A7A; cursor: pointer;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    transition: background 0.12s, color 0.12s;
   `;
-  btn.addEventListener("mouseenter", () => { btn.style.background = "#7c3aed18"; });
-  btn.addEventListener("mouseleave", () => { btn.style.background = "transparent"; });
+  btn.addEventListener("mouseenter", () => { btn.style.background = "#FBEFEF"; btn.style.color = "#A85F5F"; });
+  btn.addEventListener("mouseleave", () => { btn.style.background = "transparent"; btn.style.color = "#C07A7A"; });
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -199,46 +201,37 @@ function openTipModal(tweetId, handle) {
   const overlay = document.createElement("div");
   overlay.id = "xenia-modal";
   overlay.style.cssText = `
-    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    position: fixed; inset: 0; background: rgba(15,13,13,0.55);
     display: flex; align-items: center; justify-content: center;
-    z-index: 99999; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    z-index: 99999;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   `;
 
   const modal = document.createElement("div");
   modal.style.cssText = `
-    background: #fff; border-radius: 16px; padding: 24px; width: 320px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3); position: relative;
+    background: #FCF8F8; color: #2D2D2D; border: 1px solid #F5AFAF;
+    border-radius: 0; padding: 24px; width: 320px;
+    box-shadow: 0 12px 40px rgba(45,45,45,0.25); position: relative;
   `;
 
-  const isLoggedIn = !!extensionApiKey;
-
   modal.innerHTML = `
-    <button id="xenia-close" style="position:absolute;top:12px;right:12px;background:none;border:none;cursor:pointer;font-size:18px;color:#666;">✕</button>
-    <div style="text-align:center;margin-bottom:16px;">
-      <div style="width:40px;height:40px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;">
-        <span style="color:#fff;font-weight:700;font-size:18px;">X</span>
+    <button id="xenia-close" style="position:absolute;top:12px;right:14px;background:none;border:none;cursor:pointer;font-size:16px;color:#8E8383;font-family:inherit;">✕</button>
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="width:38px;height:38px;background:#F5AFAF;border:1px solid #F9DFDF;border-radius:0;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;">
+        <span style="color:#2D2D2D;font-weight:700;font-size:17px;">X</span>
       </div>
-      <h2 style="margin:0;font-size:18px;font-weight:700;color:#111;">Tip @${handle}</h2>
-      <p style="margin:4px 0 0;font-size:13px;color:#666;">Powered by Somnia Network</p>
+      <h2 style="margin:0;font-size:17px;font-weight:700;color:#2D2D2D;letter-spacing:0.02em;">Tip @${handle}</h2>
+      <p style="margin:5px 0 0;font-size:11px;color:#8E8383;letter-spacing:0.02em;">powered by somnia network</p>
     </div>
-    ${isLoggedIn ? `
       <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:13px;color:#555;margin-bottom:4px;">Amount (STT)</label>
+        <label style="display:block;font-size:10px;color:#8E8383;margin-bottom:5px;letter-spacing:0.08em;text-transform:uppercase;">Amount (STT)</label>
         <input id="xenia-amount" type="number" min="0.001" step="0.001" placeholder="0.1"
-          style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:15px;box-sizing:border-box;outline:none;" />
+          style="width:100%;padding:10px;border:1px solid #F9DFDF;border-radius:0;background:#FBEFEF;color:#2D2D2D;font-family:inherit;font-size:15px;box-sizing:border-box;outline:none;" />
       </div>
-      <button id="xenia-send" style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">
+      <button id="xenia-send" style="width:100%;padding:11px;background:#F5AFAF;color:#2D2D2D;border:1px solid #F9DFDF;border-radius:0;font-family:inherit;font-size:14px;font-weight:700;letter-spacing:0.02em;cursor:pointer;">
         Send Tip
       </button>
-      <div id="xenia-status" style="margin-top:10px;text-align:center;font-size:13px;min-height:20px;"></div>
-    ` : `
-      <div style="text-align:center;padding:8px 0;">
-        <p style="color:#555;font-size:14px;margin-bottom:16px;">Login to Xenia to send tips.</p>
-        <a href="https://xenia.app" target="_blank" style="display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;">
-          Open Xenia
-        </a>
-      </div>
-    `}
+      <div id="xenia-status" style="margin-top:12px;text-align:center;font-size:12px;min-height:20px;line-height:1.5;"></div>
   `;
 
   overlay.appendChild(modal);
@@ -247,8 +240,7 @@ function openTipModal(tweetId, handle) {
   document.getElementById("xenia-close")?.addEventListener("click", () => overlay.remove());
   overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
 
-  if (isLoggedIn) {
-    document.getElementById("xenia-send")?.addEventListener("click", async () => {
+  document.getElementById("xenia-send")?.addEventListener("click", async () => {
       const amountInput = document.getElementById("xenia-amount");
       const amount = amountInput?.value;
       const statusEl = document.getElementById("xenia-status");
@@ -259,7 +251,7 @@ function openTipModal(tweetId, handle) {
       };
 
       if (!amount || Number(amount) <= 0) {
-        setStatus("#dc2626", "Enter a valid amount.");
+        setStatus("#B4302F", "Enter a valid amount.");
         return;
       }
 
@@ -269,10 +261,10 @@ function openTipModal(tweetId, handle) {
       const walletAvailable = await hasInjectedWallet();
       if (!walletAvailable) {
         setStatus(
-          "#dc2626",
+          "#B4302F",
           `MetaMask required for on-chain tips. ` +
             `<a href="${API_BASE}/send-tips?to=${encodeURIComponent(handle)}&amount=${encodeURIComponent(amount)}" ` +
-            `target="_blank" style="color:#7c3aed;font-weight:600;">Open Xenia →</a>`
+            `target="_blank" style="color:#A85F5F;font-weight:700;">Open Xenia →</a>`
         );
         if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send Tip"; }
         return;
@@ -280,16 +272,16 @@ function openTipModal(tweetId, handle) {
 
       try {
         if (sendBtn) sendBtn.textContent = "Confirm in wallet…";
-        setStatus("#666", "Awaiting wallet confirmation…");
+        setStatus("#8E8383", "Awaiting wallet confirmation…");
 
         // 1. Real on-chain Escrow.tip(handle) with value = amount (wei).
         const { txHash } = await sendOnChainTip(handle, amount);
 
         const explorerUrl = `${SOMNIA_EXPLORER}/tx/${txHash}`;
         setStatus(
-          "#16a34a",
+          "#A85F5F",
           `✓ ${amount} STT sent to @${handle}!<br/>` +
-            `<a href="${explorerUrl}" target="_blank" style="color:#7c3aed;font-weight:600;">View on explorer →</a>`
+            `<a href="${explorerUrl}" target="_blank" style="color:#A85F5F;font-weight:700;">View on explorer →</a>`
         );
 
         // 2. Record the tip with the real txHash (best-effort, non-blocking UX).
@@ -312,10 +304,10 @@ function openTipModal(tweetId, handle) {
         } catch (_recordErr) {
           // On-chain tip already succeeded — surface a soft note, don't fail.
           setStatus(
-            "#16a34a",
+            "#A85F5F",
             `✓ ${amount} STT sent to @${handle}! ` +
-              `<a href="${explorerUrl}" target="_blank" style="color:#7c3aed;font-weight:600;">View →</a><br/>` +
-              `<span style="color:#b45309;">Couldn't sync to Xenia, but the tip is on-chain.</span>`
+              `<a href="${explorerUrl}" target="_blank" style="color:#A85F5F;font-weight:700;">View →</a><br/>` +
+              `<span style="color:#8E8383;">Couldn't sync to Xenia, but the tip is on-chain.</span>`
           );
         }
 
@@ -323,15 +315,68 @@ function openTipModal(tweetId, handle) {
         setTimeout(() => overlay.remove(), 4000);
       } catch (err) {
         const rejected = err && (err.message || "").toLowerCase().includes("user rejected");
-        setStatus("#dc2626", rejected ? "Transaction rejected." : "Transaction failed. Try again.");
+        setStatus("#B4302F", rejected ? "Transaction rejected." : "Transaction failed. Try again.");
         if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send Tip"; }
       }
     });
-  }
+}
+
+// ─── Profile tip button ─────────────────────────────────────────────────────────
+
+const RESERVED_PATHS = new Set([
+  "home", "explore", "notifications", "messages", "settings", "i", "search",
+  "compose", "bookmarks", "lists", "communities", "jobs", "tos", "privacy",
+  "login", "signup", "intent", "hashtag", "about", "download",
+]);
+
+// On a profile page the path is a single segment = the handle.
+function getProfileHandle() {
+  const seg = location.pathname.split("/").filter(Boolean);
+  if (seg.length === 1 && !RESERVED_PATHS.has(seg[0].toLowerCase())) return seg[0];
+  return null;
+}
+
+function createProfileTipButton(handle) {
+  const btn = document.createElement("button");
+  btn.className = "xenia-profile-tip";
+  btn.textContent = `Tip @${handle}`;
+  btn.style.cssText = `
+    display:inline-flex; align-items:center; height:36px; padding:0 16px; margin-right:8px;
+    border-radius:0; border:1px solid #F5AFAF; background:#F5AFAF; color:#2D2D2D; cursor:pointer;
+    font-size:14px; font-weight:700; letter-spacing:0.02em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  `;
+  btn.addEventListener("mouseenter", () => { btn.style.background = "#F9DFDF"; });
+  btn.addEventListener("mouseleave", () => { btn.style.background = "#F5AFAF"; });
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    openTipModal(null, handle);
+  });
+  return btn;
+}
+
+function injectProfileTipButton() {
+  const handle = getProfileHandle();
+  if (!handle) return;
+  // Anchor beside the profile's action buttons (the "..." kebab / Follow).
+  const anchor =
+    document.querySelector("[data-testid='userActions']") ||
+    document.querySelector("[data-testid$='-follow']") ||
+    document.querySelector("[data-testid='placementTracking']");
+  if (!anchor || !anchor.parentElement) return;
+  const container = anchor.parentElement;
+  if (container.querySelector(".xenia-profile-tip")) return;
+  container.insertBefore(createProfileTipButton(handle), container.firstChild);
 }
 
 // ─── Observe DOM changes ───────────────────────────────────────────────────────
 
-const observer = new MutationObserver(scanTweets);
+function scan() {
+  scanTweets();
+  injectProfileTipButton();
+}
+
+const observer = new MutationObserver(scan);
 observer.observe(document.body, { childList: true, subtree: true });
-scanTweets();
+scan();

@@ -182,10 +182,10 @@ interface SidebarMenuButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
 export const SidebarMenuButton = forwardRef<HTMLButtonElement, SidebarMenuButtonProps>(
   ({ className, isActive, asChild, children, ...props }, ref) => {
     const classes = cn(
-      "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      "flex w-full items-center gap-3 rounded-none px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       isActive
-        ? "bg-gradient-to-r from-violet-600/15 to-indigo-600/15 text-violet-700 dark:text-violet-300"
-        : "text-muted-foreground",
+        ? "border-l-2 border-primary bg-primary/15 text-foreground"
+        : "border-l-2 border-transparent text-muted-foreground",
       className,
     );
 

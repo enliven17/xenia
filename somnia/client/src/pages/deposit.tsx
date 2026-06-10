@@ -240,8 +240,8 @@ export default function Deposit() {
       </div>
 
       {/* Network Info */}
-      <div className="rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/10 p-4">
-        <p className="text-sm text-violet-800 dark:text-violet-300">
+      <div className="border border-primary/40 bg-primary/10 p-4">
+        <p className="text-sm text-foreground">
           <strong>Powered by Somnia Network</strong> — sub-second finality, near-zero gas fees.
           Transactions confirm in under 1 second.
         </p>

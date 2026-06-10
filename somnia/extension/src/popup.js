@@ -73,13 +73,13 @@ document.getElementById("save-key-btn").addEventListener("click", async () => {
   const statusEl = document.getElementById("key-status");
 
   if (!key.startsWith("xen_")) {
-    statusEl.style.color = "#dc2626";
+    statusEl.style.color = "#B4302F";
     statusEl.textContent = "Key must start with xen_";
     return;
   }
 
   chrome.storage.local.set({ xeniaApiKey: key }, () => {
-    statusEl.style.color = "#16a34a";
+    statusEl.style.color = "#8E8383";
     statusEl.textContent = "Saved! Verifying…";
     setTimeout(() => loadUser(), 500);
   });
@@ -93,13 +93,13 @@ document.getElementById("tip-send-btn").addEventListener("click", async () => {
   const statusEl = document.getElementById("tip-status");
 
   if (!handle || !amount || Number(amount) <= 0) {
-    statusEl.style.color = "#dc2626";
+    statusEl.style.color = "#B4302F";
     statusEl.textContent = "Fill in handle and amount.";
     return;
   }
 
   document.getElementById("tip-send-btn").disabled = true;
-  statusEl.style.color = "#888";
+  statusEl.style.color = "#8E8383";
   statusEl.textContent = "Sending…";
 
   try {
@@ -107,12 +107,12 @@ document.getElementById("tip-send-btn").addEventListener("click", async () => {
       method: "POST",
       body: JSON.stringify({ recipientTwitterId: handle, recipientHandle: handle, amount }),
     });
-    statusEl.style.color = "#16a34a";
+    statusEl.style.color = "#C98A8A";
     statusEl.textContent = `✓ ${amount} STT sent to @${handle}`;
     document.getElementById("tip-handle").value = "";
     document.getElementById("tip-amount").value = "";
   } catch (e) {
-    statusEl.style.color = "#dc2626";
+    statusEl.style.color = "#B4302F";
     statusEl.textContent = "Failed. Check your key or balance.";
   } finally {
     document.getElementById("tip-send-btn").disabled = false;

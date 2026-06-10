@@ -12,6 +12,11 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        // Maple Mono everywhere — sans and mono resolve to the same terminal face.
+        sans: ['"Maple Mono"', "ui-monospace", "monospace"],
+        mono: ['"Maple Mono"', "ui-monospace", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

@@ -110,11 +110,11 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      <Card className="overflow-hidden border-violet-500/30 bg-gradient-to-br from-violet-600/10 via-indigo-600/5 to-transparent">
+      <Card className="overflow-hidden border-primary/40 bg-primary/10">
         <CardHeader>
           <CardDescription>Welcome back</CardDescription>
           <CardTitle className="text-2xl md:text-3xl">
-            Hey <span className="gradient-text-violet">@{user.twitterHandle}</span>
+            Hey <span className="text-primary">@{user.twitterHandle}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6 md:grid-cols-2">
@@ -167,7 +167,7 @@ export default function DashboardPage() {
           label="Total sent"
           value={`${formatSTT(totals.sent)} STT`}
           icon={<ArrowUpRight className="h-4 w-4" />}
-          accent="text-violet-600 dark:text-violet-300"
+          accent="text-primary"
         />
         <StatCard
           label="Total received"

@@ -1,51 +1,62 @@
+/* Maple Mono — monospace everywhere; Ruthie — cursive, logo wordmark only */
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/maple-mono/index.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Ruthie&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * taalos-sui design system, ported to shadcn's HSL token mechanism.
+ * Hex → "H S% L%" so the existing `hsl(var(--x))` consumers keep working.
+ *   bg #FCF8F8 · fg #2D2D2D · accent(pink) #F5AFAF · muted #8E8383
+ *   border #F9DFDF · surface #FBEFEF   (dark variants in .dark)
+ * Text ON the pink accent is dark (#2D2D2D), never white.
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 0.5rem;
+    --background: 0 33% 98%;          /* #FCF8F8 */
+    --foreground: 0 0% 18%;           /* #2D2D2D */
+    --card: 0 50% 96%;                /* #FBEFEF surface */
+    --card-foreground: 0 0% 18%;
+    --popover: 0 33% 98%;
+    --popover-foreground: 0 0% 18%;
+    --primary: 0 80% 82%;             /* #F5AFAF pink accent */
+    --primary-foreground: 0 0% 18%;   /* dark text on pink */
+    --secondary: 0 50% 96%;           /* surface */
+    --secondary-foreground: 0 0% 18%;
+    --muted: 0 50% 96%;               /* surface */
+    --muted-foreground: 0 6% 54%;     /* #8E8383 */
+    --accent: 0 65% 93%;              /* #F9DFDF surface-hover */
+    --accent-foreground: 0 0% 18%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 33% 98%;
+    --border: 0 65% 93%;              /* #F9DFDF */
+    --input: 0 65% 93%;
+    --ring: 0 80% 82%;                /* pink */
+    --radius: 0rem;                   /* sharp corners everywhere */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 262.1 83.3% 57.8%;
+    --background: 0 10% 5%;           /* #0F0D0D */
+    --foreground: 0 13% 91%;          /* #ECE6E6 */
+    --card: 0 12% 9%;                 /* #181414 surface */
+    --card-foreground: 0 13% 91%;
+    --popover: 0 10% 5%;
+    --popover-foreground: 0 13% 91%;
+    --primary: 0 80% 82%;             /* #F5AFAF pink accent */
+    --primary-foreground: 0 0% 18%;   /* dark text on pink */
+    --secondary: 0 12% 9%;            /* surface */
+    --secondary-foreground: 0 13% 91%;
+    --muted: 0 12% 9%;                /* surface */
+    --muted-foreground: 0 6% 54%;     /* #8E8383 */
+    --accent: 0 13% 15%;              /* #2A2222 border/hover */
+    --accent-foreground: 0 13% 91%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 13% 91%;
+    --border: 0 13% 15%;              /* #2A2222 */
+    --input: 0 13% 15%;
+    --ring: 0 80% 82%;                /* pink */
   }
 }
 
@@ -55,18 +66,45 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: "Maple Mono", ui-monospace, monospace;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer utilities {
-  .gradient-violet {
-    background-image: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(243 75% 59%) 100%);
+  /* Ruthie cursive — reserved for the "Xenia" wordmark only. */
+  .font-ruthie {
+    font-family: "Ruthie", cursive;
   }
-  .gradient-text-violet {
-    background-image: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(243 75% 59%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+
+  /*
+   * Sharp corners everywhere. Many pages hardcode literal Tailwind radii
+   * (rounded-md/lg/xl); flatten them in one place so the terminal look is
+   * consistent without touching every call site. Circular elements
+   * (spinners, avatars) keep .rounded-full.
+   */
+  .rounded-sm,
+  .rounded,
+  .rounded-md,
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-3xl {
+    border-radius: 0 !important;
   }
+}
+
+/* Warm pink selection + scrollbar, mirroring taalos */
+::selection {
+  background: rgba(245, 175, 175, 0.25);
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary));
 }

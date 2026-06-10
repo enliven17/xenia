@@ -71,11 +71,7 @@
     {
       "resources": [
         "src/somnia-network.js",
-        "src/bubble_embed.html",
-        "src/wallet_inject.js",
-        "src/kaching.mp3",
-        "src/contracts/Escrow.abi",
-        "public/somnia.png"
+        "src/wallet_inject.js"
       ],
       "matches": [
         "https://x.com/*",

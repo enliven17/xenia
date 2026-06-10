@@ -1,5 +1,5 @@
 import { Switch, Route, Redirect } from "wouter";
-import { queryClient, setAuthTokenGetter } from "./lib/queryClient";
+import { ApiError, queryClient, setAuthTokenGetter } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -60,7 +60,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         <div className="text-center max-w-md p-6">
           <h2 className="text-xl font-semibold mb-2">Authentication Error</h2>
           <p className="text-muted-foreground mb-4">
-            Unable to verify your authentication. The server may not be properly configured.
+            {error instanceof ApiError && error.message
+              ? error.message
+              : "Unable to verify your authentication. The server may not be properly configured."}
           </p>
           <button
             onClick={handleLogout}
@@ -84,15 +86,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-full">
         <AppSidebar user={dbUser} onLogout={handleLogout} />
         <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between p-4 border-b shrink-0">
+          <header className="flex items-center justify-between p-4 border-b border-border shrink-0">
             <div className="flex items-center gap-3">
               <div className="md:hidden">
                 <SidebarTrigger />
               </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent">
-                Xenia
-              </span>
-              <span className="text-xs text-muted-foreground border border-violet-500/30 rounded-full px-2 py-0.5">
+              <img src="/xenia.png" alt="Xenia" className="h-8 w-auto" />
+              <span className="text-xs font-mono text-muted-foreground border border-border px-2 py-0.5">
                 Powered by Somnia
               </span>
             </div>
@@ -244,7 +244,7 @@ function AppWithPrivy() {
         loginMethods: ["twitter", "wallet"],
         appearance: {
           theme: "light",
-          accentColor: "#7C3AED", // Violet — matches Somnia branding
+          accentColor: "#F5AFAF", // Pink — taalos-sui terminal accent
           logo: undefined,
         },
         embeddedWallets: {

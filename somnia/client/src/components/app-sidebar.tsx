@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   LogOut,
   Send,
-  Sparkles,
   Wallet,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -57,15 +56,10 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
       <SidebarHeader>
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent"
+          className="flex items-center gap-2 px-2 py-1.5 hover:bg-accent"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-violet-600 to-indigo-600 text-white">
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold">Xenia</span>
-            <span className="text-[10px] text-muted-foreground">Somnia SocialFi</span>
-          </div>
+          <span className="text-3xl leading-none text-primary font-ruthie">Xenia</span>
+          <span className="text-[10px] font-mono text-muted-foreground">Somnia SocialFi</span>
         </Link>
       </SidebarHeader>
 
@@ -82,10 +76,10 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
                     <a
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        "flex w-full items-center gap-3 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                         isActive
-                          ? "bg-gradient-to-r from-violet-600/15 to-indigo-600/15 text-violet-700 dark:text-violet-300"
-                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                          ? "border-l-2 border-primary bg-primary/15 text-foreground"
+                          : "border-l-2 border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                       )}
                     >
                       <Icon className="h-4 w-4" aria-hidden="true" />
@@ -137,7 +131,7 @@ function Avatar({ src, alt, fallback }: AvatarProps) {
       <img
         src={src}
         alt={alt}
-        className="h-9 w-9 rounded-full object-cover ring-2 ring-violet-500/30"
+        className="h-9 w-9 object-cover ring-1 ring-primary/40"
         loading="lazy"
         referrerPolicy="no-referrer"
       />
@@ -146,7 +140,7 @@ function Avatar({ src, alt, fallback }: AvatarProps) {
   return (
     <div
       aria-label={alt}
-      className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-semibold text-white"
+      className="flex h-9 w-9 items-center justify-center bg-primary text-xs font-semibold text-primary-foreground"
     >
       {fallback}
     </div>
