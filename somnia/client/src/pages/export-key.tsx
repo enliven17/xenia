@@ -35,7 +35,7 @@ export default function ExportKey() {
         </div>
       </div>
 
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <h2 className="font-semibold">Embedded Wallet</h2>
         <div className="rounded-lg bg-muted px-4 py-3 font-mono text-sm truncate">
           {user?.embeddedWalletAddress ?? "No embedded wallet found"}
@@ -55,12 +55,12 @@ export default function ExportKey() {
         )}
       </div>
 
-      <div className="rounded-xl border p-6 space-y-2">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-2">
         <h2 className="font-semibold">After Exporting</h2>
         <p className="text-sm text-muted-foreground">
           Import your key into MetaMask, Rabby, or any EVM wallet. Add the Somnia Testnet network:
         </p>
-        <div className="rounded-lg bg-muted p-3 font-mono text-xs space-y-1 mt-2">
+        <div className="rounded-lg bg-muted p-3 font-mono text-xs space-y-1 mt-2 break-all">
           <div>RPC: https://dream-rpc.somnia.network</div>
           <div>Chain ID: 50312</div>
           <div>Symbol: STT</div>

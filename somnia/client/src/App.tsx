@@ -87,22 +87,22 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-full">
         <AppSidebar user={dbUser} onLogout={handleLogout} />
         <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between p-4 border-b border-border shrink-0">
-            <div className="flex items-center gap-3">
+          <header className="flex items-center justify-between gap-2 p-3 sm:p-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="md:hidden">
                 <SidebarTrigger />
               </div>
               <span className="font-ruthie text-3xl leading-none text-primary">
                 Xenia
               </span>
-              <span className="text-xs font-mono text-muted-foreground border border-border px-2 py-0.5">
+              <span className="hidden sm:inline text-xs font-mono text-muted-foreground border border-border px-2 py-0.5">
                 Powered by Somnia
               </span>
             </div>
             <ThemeToggle />
           </header>
           <main className="flex-1 overflow-auto">
-            <div className="max-w-6xl mx-auto p-6">{children}</div>
+            <div className="max-w-6xl mx-auto p-4 sm:p-6">{children}</div>
           </main>
         </div>
       </div>

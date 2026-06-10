@@ -70,7 +70,7 @@ export default function BatchSend() {
         <p className="text-muted-foreground mt-1">Send tips to multiple people at once.</p>
       </div>
 
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <div className="space-y-3">
           {recipients.map((r, i) => (
             <div key={r.id} className="flex gap-2 items-center">
@@ -86,10 +86,10 @@ export default function BatchSend() {
                 type="number"
                 value={r.amount}
                 onChange={(e) => updateRow(r.id, "amount", e.target.value)}
-                placeholder="Amount (STT)"
+                placeholder="STT"
                 min="0.001"
                 step="0.001"
-                className="w-36 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-24 sm:w-36 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <button
                 onClick={() => removeRow(r.id)}
@@ -125,10 +125,10 @@ export default function BatchSend() {
       </div>
 
       {results.length > 0 && (
-        <div className="rounded-xl border p-6 space-y-3">
+        <div className="rounded-xl border p-4 sm:p-6 space-y-3">
           <h2 className="font-semibold">Results</h2>
           {results.map((r, i) => (
-            <div key={i} className="flex items-center gap-3 text-sm">
+            <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               {r.status === "success" ? (
                 <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
               ) : (

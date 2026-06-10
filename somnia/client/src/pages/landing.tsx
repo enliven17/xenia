@@ -50,13 +50,13 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background font-mono text-foreground">
       <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
           <Link href="/" className="shrink-0">
             <span className="font-ruthie text-4xl leading-none text-primary">
               Xenia
             </span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/docs"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -67,7 +67,7 @@ export default function LandingPage() {
             {authenticated ? (
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-2 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                className="inline-flex items-center gap-2 bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 sm:px-4"
               >
                 Open app <span aria-hidden="true">&rarr;</span>
               </Link>
@@ -76,7 +76,7 @@ export default function LandingPage() {
                 type="button"
                 disabled={!ready}
                 onClick={() => login()}
-                className="inline-flex items-center gap-2 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="inline-flex items-center gap-2 bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 sm:px-4"
               >
                 <Twitter className="h-4 w-4" aria-hidden="true" />
                 Get started
@@ -88,7 +88,7 @@ export default function LandingPage() {
 
       <main>
         {/* Hero — soft aurora backdrop + slogan headline */}
-        <section className="relative flex min-h-[80vh] flex-col items-center justify-center overflow-hidden px-6 py-24">
+        <section className="relative flex min-h-[80vh] flex-col items-center justify-center overflow-hidden px-4 py-16 sm:px-6 sm:py-24">
           <div className="absolute inset-0 z-0" aria-hidden="true">
             <Ferrofluid
               colors={FERRO_COLORS}
@@ -106,7 +106,7 @@ export default function LandingPage() {
             LIVE ON SOMNIA TESTNET
           </span>
 
-          <h1 className="relative z-10 mb-6 max-w-3xl text-center text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+          <h1 className="relative z-10 mb-6 max-w-3xl text-center text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-6xl">
             Every post on <span className="text-primary">X</span>, now{" "}
             <span className="text-primary">tippable.</span>
           </h1>
@@ -118,12 +118,12 @@ export default function LandingPage() {
             {"// instant, near-zero-fee tips on Somnia. no wallet? funds wait in escrow until they claim."}
           </p>
 
-          <div className="relative z-10 flex flex-col items-center gap-3 sm:flex-row">
+          <div className="relative z-10 flex w-full max-w-xs flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row">
             <button
               type="button"
               disabled={!ready}
               onClick={() => login()}
-              className="inline-flex min-w-[220px] items-center justify-center gap-2 bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto sm:min-w-[220px]"
             >
               <Twitter className="h-4 w-4" aria-hidden="true" />
               Get started
@@ -131,7 +131,7 @@ export default function LandingPage() {
             <button
               type="button"
               onClick={scrollToFeatures}
-              className="inline-flex min-w-[220px] items-center justify-center border border-border px-6 py-3 text-sm text-foreground transition-colors hover:bg-secondary"
+              className="inline-flex w-full items-center justify-center border border-border px-6 py-3 text-sm text-foreground transition-colors hover:bg-secondary sm:w-auto sm:min-w-[220px]"
             >
               Learn more
             </button>
@@ -141,16 +141,16 @@ export default function LandingPage() {
         <section
           ref={featuresRef}
           id="features"
-          className="border-t border-border bg-secondary/40 py-20"
+          className="border-t border-border bg-secondary/40 py-12 sm:py-20"
           aria-labelledby="features-heading"
         >
-          <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mb-4 text-sm tracking-wide text-muted-foreground">{"// FEATURES"}</div>
-            <h2 id="features-heading" className="mb-12 text-2xl font-bold text-primary">
+            <h2 id="features-heading" className="mb-8 text-xl font-bold text-primary sm:mb-12 sm:text-2xl">
               Built for the next billion tippers
             </h2>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
               {features.map((f) => (
                 <FeatureCard
                   key={f.title}
@@ -166,10 +166,10 @@ export default function LandingPage() {
         </section>
 
         {/* How it works — flow diagram */}
-        <section className="border-t border-border py-20" aria-labelledby="how-heading">
-          <div className="mx-auto max-w-6xl px-6">
+        <section className="border-t border-border py-12 sm:py-20" aria-labelledby="how-heading">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mb-4 text-sm tracking-wide text-muted-foreground">{"// HOW IT WORKS"}</div>
-            <h2 id="how-heading" className="mb-3 text-2xl font-bold text-primary">
+            <h2 id="how-heading" className="mb-3 text-xl font-bold text-primary sm:text-2xl">
               From tweet to wallet, in one tap
             </h2>
             <p className="mb-10 max-w-2xl text-sm text-muted-foreground">
@@ -240,7 +240,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-border py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-sm text-muted-foreground md:flex-row">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-muted-foreground sm:px-6 md:flex-row">
           <span>Powered by Somnia Network</span>
           <nav aria-label="Legal" className="flex items-center gap-6">
             <Link href="/privacy" className="hover:text-foreground">

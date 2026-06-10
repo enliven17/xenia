@@ -104,12 +104,12 @@ export default function DashboardPage() {
 
       {/* Unclaimed banner */}
       {pendingClaimsCount > 0 ? (
-        <div className="flex items-start gap-3 border border-primary/40 bg-primary/10 px-4 py-3">
+        <div className="flex flex-wrap items-start gap-3 border border-primary/40 bg-primary/10 px-4 py-3">
           <AlertCircle
             className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary"
             aria-hidden="true"
           />
-          <div className="flex-1">
+          <div className="min-w-[12rem] flex-1">
             <p className="text-sm font-bold">
               You have {pendingClaimsCount} unclaimed tip
               {pendingClaimsCount === 1 ? "" : "s"}.
@@ -129,17 +129,17 @@ export default function DashboardPage() {
       {/* Overview grid: balance hero + wallet + stats */}
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Balance hero */}
-        <div className="flex flex-col justify-between border border-primary/40 bg-primary/5 p-6 lg:col-span-2">
+        <div className="flex flex-col justify-between border border-primary/40 bg-primary/5 p-4 sm:p-6 lg:col-span-2">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">
             Wallet balance
           </p>
-          <div className="mt-3 flex items-end gap-2">
-            <span className="text-4xl font-bold tabular-nums md:text-5xl">
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <span className="break-all text-3xl font-bold tabular-nums sm:text-4xl md:text-5xl">
               {balanceDisplay}
             </span>
             <span className="mb-1 text-lg text-primary">STT</span>
           </div>
-          <div className="mt-5 flex items-center gap-2">
+          <div className="mt-5 flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Somnia wallet:</span>
             {walletAddress ? (
               <>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <StatCard
           label="Total sent"
           value={`${formatSTT(totals.sent)} STT`}
@@ -212,7 +212,7 @@ export default function DashboardPage() {
 
       {/* Recent activity */}
       <div className="border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
           <div>
             <h2 className="text-sm font-bold">Recent activity</h2>
             <p className="text-xs text-muted-foreground">
@@ -291,7 +291,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon }: StatCardProps) {
   return (
-    <div className="flex items-center justify-between border border-border bg-card p-5">
+    <div className="flex items-center justify-between border border-border bg-card p-4 sm:p-5">
       <div>
         <p className="text-xs uppercase tracking-wider text-muted-foreground">
           {label}

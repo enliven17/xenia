@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function TermsConditions() {
   return (
-    <div className="max-w-2xl mx-auto py-12 px-6 space-y-8">
+    <div className="max-w-2xl mx-auto py-8 sm:py-12 px-4 sm:px-6 space-y-8">
       <Link href="/">
         <a className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back
@@ -11,7 +11,7 @@ export default function TermsConditions() {
       </Link>
 
       <div>
-        <h1 className="text-3xl font-bold">Terms & Conditions</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Terms & Conditions</h1>
         <p className="text-muted-foreground mt-2">Last updated: {new Date().toLocaleDateString()}</p>
       </div>
 

@@ -35,7 +35,7 @@ export default function ExtensionKey() {
         </p>
       </div>
 
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <div className="flex items-center gap-2">
           <Key className="h-5 w-5 text-primary" />
           <h2 className="font-semibold">Your API Key</h2>
@@ -71,7 +71,7 @@ export default function ExtensionKey() {
         )}
       </div>
 
-      <div className="rounded-xl border p-6 space-y-3">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-3">
         <h2 className="font-semibold">How to Use</h2>
         <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
           <li>Install the Xenia Chrome extension</li>

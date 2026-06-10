@@ -43,7 +43,7 @@ export default function LinkWallet() {
       </div>
 
       {/* Current wallets */}
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <h2 className="font-semibold">Connected Wallets</h2>
         <div className="space-y-3">
           <div className="flex items-center gap-3 rounded-lg bg-muted px-4 py-3">
@@ -67,7 +67,7 @@ export default function LinkWallet() {
       </div>
 
       {/* Link by address */}
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <h2 className="font-semibold">Link by Address</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
@@ -99,7 +99,7 @@ export default function LinkWallet() {
       </div>
 
       {/* Connect via Privy */}
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <h2 className="font-semibold">Connect via Privy</h2>
         <p className="text-sm text-muted-foreground">
           Use Privy to connect MetaMask, Coinbase Wallet, or WalletConnect directly.

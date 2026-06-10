@@ -24,13 +24,13 @@ export default function DocsPage() {
   return (
     <div className="min-h-screen bg-background font-mono text-foreground">
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
           <Link href="/" className="shrink-0">
             <span className="font-ruthie text-4xl leading-none text-primary">
               Xenia
             </span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -43,7 +43,7 @@ export default function DocsPage() {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-6xl gap-10 px-6 py-12 lg:flex-row flex-col">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12 lg:flex-row lg:gap-10">
         {/* Section index */}
         <nav
           aria-label="Documentation sections"
@@ -77,7 +77,7 @@ export default function DocsPage() {
       </div>
 
       <footer className="border-t border-border py-10">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-sm text-muted-foreground">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 text-sm text-muted-foreground sm:px-6">
           <span>Powered by Somnia Network</span>
           <Link href="/" className="hover:text-foreground">
             Home
@@ -103,7 +103,7 @@ function DocSection({ id, kicker, title, children }: DocSectionProps) {
       <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
         {`// ${kicker}`}
       </p>
-      <h2 id={`${id}-heading`} className="mb-5 text-2xl font-bold text-primary">
+      <h2 id={`${id}-heading`} className="mb-5 text-xl font-bold text-primary sm:text-2xl">
         {title}
       </h2>
       <div className="space-y-4 text-sm leading-relaxed text-foreground">

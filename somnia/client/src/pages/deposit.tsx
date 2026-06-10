@@ -94,7 +94,7 @@ export default function Deposit() {
       </div>
 
       {/* Wallet Address */}
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <h2 className="font-semibold">Your Somnia Wallet</h2>
 
         {walletAddress ? (
@@ -130,7 +130,7 @@ export default function Deposit() {
       </div>
 
       {/* On-chain Deposit (Mode B) */}
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <h2 className="font-semibold flex items-center gap-2">
           <Wallet className="h-4 w-4 text-primary" />
           Deposit to Escrow
@@ -168,7 +168,7 @@ export default function Deposit() {
       </div>
 
       {/* Authorize Bot (Mode B) */}
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <h2 className="font-semibold flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-primary" />
           Authorize Xenia Bot
@@ -210,7 +210,7 @@ export default function Deposit() {
       </div>
 
       {/* Instructions */}
-      <div className="rounded-xl border p-6 space-y-4">
+      <div className="rounded-xl border p-4 sm:p-6 space-y-4">
         <h2 className="font-semibold flex items-center gap-2">
           <Info className="h-4 w-4 text-primary" />
           How to get STT (Testnet)
@@ -229,7 +229,7 @@ export default function Deposit() {
           </li>
           <li>Connect your wallet and request testnet STT tokens</li>
           <li>Add Somnia Testnet to your wallet if not already added:
-            <div className="mt-2 rounded-lg bg-muted p-3 font-mono text-xs space-y-1">
+            <div className="mt-2 rounded-lg bg-muted p-3 font-mono text-xs space-y-1 break-all">
               <div>RPC: https://dream-rpc.somnia.network</div>
               <div>Chain ID: 50312</div>
               <div>Symbol: STT</div>
