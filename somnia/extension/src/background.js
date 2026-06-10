@@ -3,7 +3,7 @@
  * Handles auth token storage and message routing between content scripts and popup.
  */
 
-const API_BASE = "https://xenia.app";
+const API_BASE = "https://xenia-production.up.railway.app";
 
 // ─── Auth Token Management ────────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 async function sendTipViaBackground({ recipientTwitterId, recipientHandle, amount, tweetId }) {
   const { xeniaApiKey } = await chrome.storage.local.get("xeniaApiKey");
-  if (!xeniaApiKey) throw new Error("No API key. Login at xenia.app");
+  if (!xeniaApiKey) throw new Error("No API key. Open the Xenia dashboard to pair.");
 
   const res = await fetch(`${API_BASE}/api/tips/send`, {
     method: "POST",
@@ -95,6 +95,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === "install") {
-    chrome.tabs.create({ url: "https://xenia.app" });
+    chrome.tabs.create({ url: "https://xenia-production.up.railway.app" });
   }
 });

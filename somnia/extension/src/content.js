@@ -3,7 +3,7 @@
  * Injects a "Tip" button next to tweet action buttons.
  */
 
-const API_BASE = "https://xenia.app";
+const API_BASE = "https://xenia-production.up.railway.app";
 const SOMNIA_EXPLORER = "https://shannon-explorer.somnia.network";
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -341,9 +341,10 @@ function createProfileTipButton(handle) {
   btn.className = "xenia-profile-tip";
   btn.textContent = `Tip @${handle}`;
   btn.style.cssText = `
-    display:inline-flex; align-items:center; height:36px; padding:0 16px; margin-right:8px;
+    display:inline-flex; align-items:center; align-self:center; height:32px; padding:0 14px; margin-right:8px;
     border-radius:0; border:1px solid #F5AFAF; background:#F5AFAF; color:#2D2D2D; cursor:pointer;
-    font-size:14px; font-weight:700; letter-spacing:0.02em;
+    font-size:13px; font-weight:700; letter-spacing:0.02em; line-height:1;
+    vertical-align:middle; box-sizing:border-box; flex:0 0 auto;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   `;
   btn.addEventListener("mouseenter", () => { btn.style.background = "#F9DFDF"; });

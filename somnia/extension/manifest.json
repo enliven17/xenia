@@ -16,6 +16,7 @@
     "notifications"
   ],
   "host_permissions": [
+    "https://xenia-production.up.railway.app/*",
     "https://xenia.app/*",
     "https://www.xenia.app/*",
     "https://dream-rpc.somnia.network/*",
@@ -55,6 +56,7 @@
     },
     {
       "matches": [
+        "https://xenia-production.up.railway.app/*",
         "https://xenia.app/*",
         "https://www.xenia.app/*"
       ],
