@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Xenia — Pitch Deck</title>
+<style>
+  @import url('https://cdn.jsdelivr.net/npm/@fontsource/maple-mono/index.min.css');
+
+  :root{
+    --bg:#0F0D0D; --fg:#ECE6E6; --accent:#F5AFAF; --muted:#8E8383;
+    --border:#2A2222; --surface:#181414;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  html,body{ background:#000; color:var(--fg); font-family:"Maple Mono",ui-monospace,monospace; }
+
+  @page{ size:1280px 720px; margin:0; }
+
+  .slide{
+    width:1280px; height:720px; position:relative; overflow:hidden;
+    background:var(--bg); padding:64px 72px; page-break-after:always;
+    display:flex; flex-direction:column;
+  }
+  .slide:last-child{ page-break-after:auto; }
+
+  /* chrome bar */
+  .bar{ position:absolute; top:0; left:0; right:0; height:6px; background:var(--accent); }
+  .meta{ position:absolute; top:28px; right:72px; font-size:13px; color:var(--muted); letter-spacing:.06em; }
+  .pageno{ position:absolute; bottom:28px; right:72px; font-size:13px; color:var(--muted); }
+  .foot{ position:absolute; bottom:28px; left:72px; font-size:13px; color:var(--muted); letter-spacing:.04em; }
+
+  .kicker{ color:var(--accent); font-size:15px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:18px; }
+  h1{ font-size:40px; line-height:1.12; font-weight:700; letter-spacing:-.01em; }
+  h2{ font-size:34px; line-height:1.15; font-weight:700; margin-bottom:26px; }
+  h2 .pink{ color:var(--accent); }
+  p.lead{ font-size:21px; line-height:1.5; color:var(--fg); max-width:90%; }
+  p.sub{ font-size:17px; line-height:1.6; color:var(--muted); max-width:88%; }
+
+  ul{ list-style:none; }
+  li{ font-size:19px; line-height:1.6; margin-bottom:16px; padding-left:26px; position:relative; }
+  li::before{ content:">"; color:var(--accent); position:absolute; left:0; }
+  li b{ color:var(--fg); }
+  li span{ color:var(--muted); }
+
+  .cols{ display:flex; gap:28px; flex:1; }
+  .card{ flex:1; border:1px solid var(--border); background:var(--surface); padding:26px 26px 28px; }
+  .card h3{ font-size:18px; color:var(--accent); margin-bottom:14px; letter-spacing:.02em; }
+  .card p{ font-size:16px; line-height:1.55; color:var(--muted); }
+  .card .big{ font-size:15px; color:var(--fg); line-height:1.5; }
+
+  table{ width:100%; border-collapse:collapse; font-size:18px; margin-top:8px; }
+  th,td{ text-align:left; padding:14px 16px; border-bottom:1px solid var(--border); }
+  th{ color:var(--muted); font-weight:400; font-size:14px; letter-spacing:.08em; text-transform:uppercase; }
+  td.pink{ color:var(--accent); }
+  tr td:first-child{ color:var(--fg); }
+
+  .tag{ display:inline-block; border:1px solid var(--accent); color:var(--accent); font-size:13px; padding:5px 12px; letter-spacing:.08em; }
+  .mono-box{ border:1px solid var(--border); background:var(--surface); padding:18px 20px; font-size:15px; color:var(--muted); line-height:1.7; white-space:pre; }
+  .mono-box b{ color:var(--accent); }
+
+  .center{ align-items:center; justify-content:center; text-align:center; }
+  .logo{ height:96px; width:auto; margin-bottom:30px; }
+  .flow{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:16px; }
+  .node{ border:1px solid var(--border); background:var(--surface); padding:12px 16px; color:var(--fg); }
+  .arr{ color:var(--accent); }
+  .checks li::before{ content:"[x]"; color:var(--accent); font-size:15px; }
+
+  /* architecture diagram */
+  .diagram{ display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:14px; }
+  .layer-label{ color:var(--accent); font-size:13px; letter-spacing:.12em; text-transform:uppercase; align-self:flex-start; }
+  .drow{ display:flex; gap:22px; width:100%; }
+  .dbox{ flex:1; border:1px solid var(--border); background:var(--surface); padding:16px 18px; text-align:center; }
+  .dbox b{ color:var(--fg); font-size:17px; display:block; }
+  .dbox span{ color:var(--muted); font-size:13px; display:block; margin-top:6px; line-height:1.45; }
+  .dbox.accent{ border-color:var(--accent); }
+  .dbox.accent b{ color:var(--accent); }
+  .dconn{ color:var(--accent); font-size:14px; letter-spacing:.04em; }
+</style>
+</head>
+<body>
+
+<!-- 1 — Title -->
+<section class="slide center">
+  <div class="bar"></div>
+  <img src="logo.png" class="logo" alt="Xenia" />
+  <h1 style="font-size:30px;color:var(--accent);">tip the post, not the platform.</h1>
+  <p class="sub" style="margin-top:22px;max-width:70%;">On-chain tipping for X (Twitter), built on Somnia Network.<br/>Sub-second finality. Sub-cent gas. Tip anyone by handle.</p>
+  <div style="margin-top:34px;" class="tag">ENCODE AGENTATHON · LIVE ON SOMNIA TESTNET</div>
+  <div class="foot">xenia // somnia</div>
+</section>
+
+<!-- 2 — Problem -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// problem</div>
+  <div class="kicker">The problem</div>
+  <h2>Tipping creators is <span class="pink">broken</span></h2>
+  <div class="cols">
+    <div class="card">
+      <h3>Web2 tipping</h3>
+      <p class="big">Twitter Tips, Patreon, Ko-Fi.</p>
+      <ul style="margin-top:16px;">
+        <li>Both sides must sign up</li>
+        <li>2–30% in fees</li>
+        <li>Payouts take days</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Web3 tipping</h3>
+      <p class="big">Chain-native transfers.</p>
+      <ul style="margin-top:16px;">
+        <li>Recipient needs a wallet on the right chain</li>
+        <li>Gas often costs more than the tip</li>
+        <li>No in-feed gesture</li>
+      </ul>
+    </div>
+  </div>
+  <p class="sub" style="margin-top:26px;">Result: tipping is a friction-filled chore almost no one does.</p>
+  <div class="pageno">02</div>
+</section>
+
+<!-- 3 — Solution -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// solution</div>
+  <div class="kicker">The solution</div>
+  <h2>Tip any X handle in <span class="pink">one click</span></h2>
+  <ul>
+    <li><b>Tip anyone — even non-crypto users.</b> <span>Tips to unregistered handles are held in an on-chain escrow, keyed by the handle.</span></li>
+    <li><b>One-click claim.</b> <span>Recipient signs up once (Privy / wallet), the backend binds their wallet on-chain, funds land instantly.</span></li>
+    <li><b>Tip from inside X.</b> <span>A Chrome extension injects a Tip button into the feed and onto profiles.</span></li>
+    <li><b>Two modes, one contract.</b> <span>Direct tip (extension/web) and Twitter-command tip via an AI bot.</span></li>
+  </ul>
+  <div class="pageno">03</div>
+</section>
+
+<!-- 4 — Why Somnia -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// why somnia</div>
+  <div class="kicker">Why Somnia</div>
+  <h2>Micro-tipping is finally <span class="pink">economically viable</span></h2>
+  <table>
+    <tr><th>Property</th><th>Typical L1/L2</th><th>Somnia</th><th>Why it matters</th></tr>
+    <tr><td>Finality</td><td class="pink" style="color:var(--muted)">2–12s</td><td class="pink">&lt; 1s</td><td><span>In-feed tip feels like Web2</span></td></tr>
+    <tr><td>Gas / tip</td><td style="color:var(--muted)">$0.05–$1.00</td><td class="pink">&lt; $0.001</td><td><span>$0.10 tips make sense</span></td></tr>
+    <tr><td>Throughput</td><td style="color:var(--muted)">100–4,000 TPS</td><td class="pink">1,000,000+ TPS</td><td><span>Viral headroom</span></td></tr>
+    <tr><td>EVM</td><td style="color:var(--muted)">Yes</td><td class="pink">Yes</td><td><span>Solidity + viem port cleanly</span></td></tr>
+  </table>
+  <p class="sub" style="margin-top:28px;">Sub-second finality turns "I'm sending a transaction" into "I just tapped a button."</p>
+  <div class="pageno">04</div>
+</section>
+
+<!-- 5 — Mode A -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// mode A</div>
+  <div class="kicker">How it works — Mode A</div>
+  <h2>Direct tip <span class="pink">(extension / web)</span></h2>
+  <div class="flow" style="margin-bottom:30px;">
+    <span class="node">Click Tip on X</span><span class="arr">→</span>
+    <span class="node">Escrow.tip(handle)</span><span class="arr">→</span>
+    <span class="node">registered?</span>
+  </div>
+  <div class="cols">
+    <div class="card"><h3>Registered recipient</h3><p class="big">STT transfers directly to their wallet, in &lt; 1 second.</p></div>
+    <div class="card"><h3>Unregistered recipient</h3><p class="big">STT locked in escrow under the handle. Backend indexes a claim; recipient claims after sign-up.</p></div>
+  </div>
+  <p class="sub" style="margin-top:24px;">The user's own wallet signs the transaction (Privy embedded wallet on web, MetaMask in the extension).</p>
+  <div class="pageno">05</div>
+</section>
+
+<!-- 6 — Mode B + claim -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// mode B</div>
+  <div class="kicker">How it works — Mode B + claim</div>
+  <h2>Tip by <span class="pink">tweet</span>, claim with <span class="pink">one sign-up</span></h2>
+  <div class="cols">
+    <div class="card">
+      <h3>Mode B — Twitter command</h3>
+      <div class="mono-box"><b>@xeniaBot</b> tip @bob 5 STT</div>
+      <ul style="margin-top:16px;">
+        <li>Pre-deposit + authorize the bot</li>
+        <li>Bot parses intent with <b style="color:var(--accent)">Gemini</b></li>
+        <li>Calls tipOnBehalf() — bot can only forward, never withdraw</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Claim flow</h3>
+      <ul>
+        <li>Recipient signs up (Privy)</li>
+        <li>Backend binds handle → wallet on-chain (immutable)</li>
+        <li>claim(handle) pulls all pending escrow tips</li>
+      </ul>
+    </div>
+  </div>
+  <div class="pageno">06</div>
+</section>
+
+<!-- 7 — Architecture -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// architecture</div>
+  <div class="kicker">Architecture</div>
+  <h2>One escrow contract, <span class="pink">many surfaces</span></h2>
+  <div class="diagram">
+    <div class="layer-label">Somnia Network — smart contracts</div>
+    <div class="drow">
+      <div class="dbox accent"><b>Escrow.sol</b><span>tip · claim · deposit · authorize · tipOnBehalf · refund</span></div>
+      <div class="dbox"><b>ScreenshotRegistry.sol</b><span>on-chain proof-of-post</span></div>
+    </div>
+    <div class="dconn">▲ &nbsp; viem (RPC) &nbsp; ▼</div>
+    <div class="drow">
+      <div class="dbox"><b>Backend</b><span>Express + Drizzle + Neon Postgres · REST API · Privy auth · Gemini Twitter bot</span></div>
+    </div>
+    <div class="dconn">▼</div>
+    <div class="drow">
+      <div class="dbox"><b>React web app</b><span>Privy embedded wallet</span></div>
+      <div class="dbox"><b>Chrome extension</b><span>MetaMask · in-feed + profile Tip button</span></div>
+    </div>
+  </div>
+  <div class="pageno">07</div>
+</section>
+
+<!-- 8 — What's built -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// status</div>
+  <div class="kicker">What's built</div>
+  <h2>Working end-to-end <span class="pink">on testnet</span></h2>
+  <div class="cols">
+    <div class="card">
+      <ul class="checks">
+        <li>Two Solidity contracts <b>deployed & live</b></li>
+        <li>Real on-chain <b>tip / claim / deposit</b> (user-signed)</li>
+        <li>Chrome extension: in-feed + <b>profile</b> Tip button</li>
+        <li>Escrow tips <b>indexed</b> to Postgres as claims</li>
+      </ul>
+    </div>
+    <div class="card">
+      <ul class="checks">
+        <li><b>Gemini</b>-powered Twitter command bot</li>
+        <li>Privy auth (X or wallet) + embedded wallets</li>
+        <li>Canonical <b>handle</b> identity across all flows</li>
+        <li>Deploy-ready: Railway + Neon, preflight checks</li>
+      </ul>
+    </div>
+  </div>
+  <div class="mono-box" style="margin-top:24px;font-size:13px;">Escrow   <b>0xEf0ca54F3C195737880127df62069C5B5A17B458</b>   ·   chainId <b>50312</b></div>
+  <div class="pageno">08</div>
+</section>
+
+<!-- 9 — Security -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// security</div>
+  <div class="kicker">Security</div>
+  <h2>Built so funds <span class="pink">can't be touched</span> by the wrong party</h2>
+  <div class="cols">
+    <div class="card"><ul>
+      <li>nonReentrant on every value-moving call</li>
+      <li>Fees tracked separately from user funds</li>
+      <li>Wallet binding immutable once set</li>
+    </ul></div>
+    <div class="card"><ul>
+      <li>Bot delegation scoped to forwarding only</li>
+      <li>90-day sender refund safety net</li>
+      <li>Two-step ownership transfer</li>
+    </ul></div>
+  </div>
+  <p class="sub" style="margin-top:24px;">The backend never holds user keys — Privy embedded wallets stay client-side.</p>
+  <div class="pageno">09</div>
+</section>
+
+<!-- 10 — Demo -->
+<section class="slide">
+  <div class="bar"></div><div class="meta">// demo</div>
+  <div class="kicker">Live demo</div>
+  <h2>Visit a profile → <span class="pink">tip → on-chain</span></h2>
+  <div class="flow" style="margin-bottom:28px;">
+    <span class="node">open any X profile</span><span class="arr">→</span>
+    <span class="node">Tip @user</span><span class="arr">→</span>
+    <span class="node">amount + wallet</span><span class="arr">→</span>
+    <span class="node">STT in their wallet</span>
+  </div>
+  <div class="mono-box">handle <b>@user</b>  →  resolved to their registered wallet
+tip()  →  direct transfer, &lt; 1s, verifiable on the Somnia explorer
+unregistered <b>@user</b>  →  held in escrow until they claim</div>
+  <p class="sub" style="margin-top:24px;">No app login needed — the sender's own wallet signs the transaction. The recipient does nothing; if they haven't joined yet, the tip waits safely in escrow.</p>
+  <div class="pageno">10</div>
+</section>
+
+<!-- 11 — Closing -->
+<section class="slide center">
+  <div class="bar"></div>
+  <img src="logo.png" class="logo" style="height:72px;" alt="Xenia" />
+  <h2 style="margin-bottom:18px;">tip the post, <span class="pink">not the platform.</span></h2>
+  <table style="max-width:680px;margin:0 auto;">
+    <tr><td>Now</td><td class="pink">Live on Somnia testnet · Mode A end-to-end</td></tr>
+    <tr><td>Next</td><td class="pink">Mainnet · Chrome Web Store · X login</td></tr>
+  </table>
+  <div style="margin-top:32px;" class="tag">LIVE ON SOMNIA TESTNET</div>
+  <div class="foot">xenia // somnia</div>
+</section>
+
+</body>
+</html>
