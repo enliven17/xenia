@@ -26,6 +26,7 @@ import NotFound from "@/pages/not-found";
 import { ExtensionAuthBridge } from "@/components/extension-auth-bridge";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsConditions from "@/pages/terms-conditions";
+import Docs from "@/pages/docs";
 import { DEFAULT_CHAIN, SOMNIA_MAINNET, SOMNIA_TESTNET } from "@/lib/chains";
 
 // ─── Layout Components ────────────────────────────────────────────────────────
@@ -91,7 +92,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
               <div className="md:hidden">
                 <SidebarTrigger />
               </div>
-              <img src="/xenia.png" alt="Xenia" className="h-8 w-auto" />
+              <span className="font-ruthie text-3xl leading-none text-primary">
+                Xenia
+              </span>
               <span className="text-xs font-mono text-muted-foreground border border-border px-2 py-0.5">
                 Powered by Somnia
               </span>
@@ -153,6 +156,9 @@ function Router() {
       </Route>
       <Route path="/terms">
         <TermsConditions />
+      </Route>
+      <Route path="/docs">
+        <Docs />
       </Route>
       <Route path="/dashboard">
         <AuthenticatedLayout>
