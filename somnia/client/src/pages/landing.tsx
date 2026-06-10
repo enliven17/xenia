@@ -3,7 +3,10 @@ import { Megaphone, ShieldCheck, Twitter, Zap } from "lucide-react";
 import { useRef, type ReactNode } from "react";
 import { Link } from "wouter";
 import { ThemeToggle } from "@/components/theme-toggle";
-import SoftAurora from "@/components/SoftAurora";
+import Ferrofluid from "@/components/Ferrofluid";
+
+// Stable identity so the WebGL effect isn't re-initialised on every render.
+const FERRO_COLORS = ["#F5AFAF", "#9b5de5", "#F5AFAF"];
 
 interface Feature {
   icon: typeof Zap;
@@ -87,11 +90,14 @@ export default function LandingPage() {
         {/* Hero — soft aurora backdrop + slogan headline */}
         <section className="relative flex min-h-[80vh] flex-col items-center justify-center overflow-hidden px-6 py-24">
           <div className="absolute inset-0 z-0" aria-hidden="true">
-            <SoftAurora
-              color1="#F5AFAF"
-              color2="#9b5de5"
-              brightness={0.85}
+            <Ferrofluid
+              colors={FERRO_COLORS}
               speed={0.5}
+              scale={1.6}
+              glow={1.7}
+              opacity={0.9}
+              flowDirection="down"
+              mouseInteraction
             />
           </div>
 
