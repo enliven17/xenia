@@ -1,8 +1,66 @@
 # Xenia — Deployment Guide
 
-Frontend → **Vercel** · Backend → **Railway** · Database → **Neon** (Postgres) · Contracts → **Somnia**
+The Express server serves the built React client in production, so **one Railway service runs the whole app** (frontend + API). Vercel is optional and only needed if you want the frontend on a separate CDN/domain (see §8).
 
-Total time: ~20 minutes if all accounts are ready.
+---
+
+## Railway-only (recommended)
+
+Database → **Neon** (already live) · App (frontend + API) → **Railway** · Contracts → **Somnia** (already deployed).
+
+### 1. Railway service
+
+1. <https://railway.app/new> → **Deploy from GitHub repo** → pick the repo
+2. Service → Settings → **Root Directory = `somnia`**
+3. `railway.json` is already configured:
+   - Build: `npm install --include=dev && npm run build` (the `--include=dev` is required — `vite`/`esbuild` are devDependencies)
+   - Start: `npm start` (forces `NODE_ENV=production` via the script itself)
+   - Healthcheck: `/api/health`
+
+### 2. Variables
+
+Paste these in Service → **Variables**:
+
+```
+DATABASE_URL=postgresql://…neon.tech/neondb?sslmode=require
+PRIVY_APP_ID=…
+PRIVY_APP_SECRET=…
+SESSION_SECRET=<openssl rand -hex 32>
+SOMNIA_CHAIN_ID=50312
+SOMNIA_RPC_URL=https://dream-rpc.somnia.network
+SOMNIA_EXPLORER_URL=https://shannon-explorer.somnia.network
+ESCROW_CONTRACT_ADDRESS=0xEf0ca54F3C195737880127df62069C5B5A17B458
+REGISTRY_CONTRACT_ADDRESS=0x9C3c6b9cc4ECdA73e65A240DD0cD075ce202AfE3
+BACKEND_WALLET_PRIVATE_KEY=<Escrow/Registry owner key, funded with STT>
+XENIA_BOT_API_KEY=<shared bot key>
+VITE_SOMNIA_CHAIN=testnet
+```
+
+> - **Do NOT set `NODE_ENV`.** The start script sets `production`; setting it as a build variable makes `npm install` skip devDependencies and the build fails. (The `--include=dev` build command guards against this anyway.)
+> - **Do NOT set `PORT`.** Railway provides it.
+> - `VITE_SOMNIA_CHAIN` is read at build time and baked into the client — it must be present on Railway, not just locally.
+> - `CORS_ORIGINS` is not needed — the client is same-origin.
+
+### 3. Privy dashboard
+
+In the Privy app settings, add the Railway production URL (e.g. `https://xenia-production-xxxx.up.railway.app`) to **Allowed origins / redirect URIs**. Twitter login fails on production without this.
+
+### 4. Deploy + verify
+
+1. Settings → Networking → **Generate Domain**
+2. `GET https://<railway-domain>/api/health` → `{"success":true,…}`
+3. Open `/` → landing renders → **Login with X** → dashboard shows STT balance
+4. Send a real tip → confirm the tx on the Somnia explorer
+
+Run `npm run preflight` locally first — it checks env + on-chain contract bytecode in Railway-only mode.
+
+---
+
+## Vercel + Railway split (optional)
+
+Only if you want the frontend on Vercel's CDN with a separate domain. Everything below is the original two-service guide.
+
+Frontend → **Vercel** · Backend → **Railway** · Database → **Neon** (Postgres) · Contracts → **Somnia**
 
 ---
 

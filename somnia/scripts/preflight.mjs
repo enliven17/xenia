@@ -27,6 +27,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
 const SKIP_CHAIN = process.argv.includes("--no-chain");
+// Railway-only deploy: the Node server serves the built client too, so CORS_ORIGINS
+// and the vercel.json rewrite are not required.
+const RAILWAY = process.argv.includes("--railway");
 
 // ── tiny logger ────────────────────────────────────────────────────────────
 const errors = [];
@@ -89,7 +92,6 @@ const REQUIRED = [
   "BACKEND_WALLET_PRIVATE_KEY",
   "DATABASE_URL",
   "SESSION_SECRET",
-  "CORS_ORIGINS",
   "PRIVY_APP_ID",
   "PRIVY_APP_SECRET",
 ];
@@ -97,6 +99,11 @@ for (const key of REQUIRED) {
   if (present(key)) ok(`${key} set`);
   else fail(`${key} missing or still a placeholder`);
 }
+// CORS_ORIGINS: required only for the split Vercel+Railway model. On Railway-only
+// the client is same-origin, so it's optional.
+if (present("CORS_ORIGINS")) ok("CORS_ORIGINS set");
+else if (RAILWAY) warn("CORS_ORIGINS not set (fine for Railway-only — client is same-origin)");
+else fail("CORS_ORIGINS missing or still a placeholder");
 
 // optional-but-recommended
 for (const key of ["TWITTER_BEARER_TOKEN", "SOMNIA_EXPLORER_URL"]) {
@@ -125,7 +132,9 @@ if (present("BACKEND_WALLET_PRIVATE_KEY")) {
 // ── 3. vercel.json placeholder ──────────────────────────────────────────────
 section("3. vercel.json rewrite target");
 const vercelPath = path.join(ROOT, "vercel.json");
-if (!fs.existsSync(vercelPath)) {
+if (RAILWAY) {
+  ok("Railway-only mode — vercel.json not used (server serves the client)");
+} else if (!fs.existsSync(vercelPath)) {
   fail("vercel.json not found");
 } else {
   const raw = fs.readFileSync(vercelPath, "utf8");
