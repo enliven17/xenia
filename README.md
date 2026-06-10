@@ -2,6 +2,8 @@
 
 On-chain tipping for X (Twitter), built on Somnia Network. Tips are sent to a Twitter handle; if the recipient has no wallet yet, funds are held in an on-chain escrow keyed by their handle and released when they sign up.
 
+At the centre of the system is an **autonomous agent**: a tweet such as `@xeniabot tip @bob 5 STT` is read, interpreted by an LLM, and executed on-chain on the sender's behalf — within guardrails that let it forward funds but never withdraw them. See [The agent](#the-agent).
+
 ## Networks
 
 | | Testnet (Shannon) | Mainnet |
@@ -56,6 +58,27 @@ The user's wallet signs all value-moving calls (`tip`, `claim`, `deposit`, `auth
 ## Identity model
 
 Escrow entries are keyed by the **lowercased Twitter handle** (e.g. `vitalik`), not the numeric account id, because the handle is the only identifier a sender knows at tip time for an unregistered recipient. The same key is used by `tip`, `tipOnBehalf`, `claim`, and `registerWallet`.
+
+## The agent
+
+Mode B is driven by an autonomous agent that turns a natural-language tweet into an on-chain tip. It is provider-agnostic — Gemini by default, Claude as a fallback, and a deterministic regex matcher if no model is configured — so it degrades gracefully and never fails closed on a parse error. Before moving funds it runs guards: it resolves the sender's wallet, verifies that the bot is authorized and the deposit covers the amount, and rejects self-tips. The contract restricts it to forwarding funds to the resolved recipient; it can never withdraw.
+
+```mermaid
+flowchart TD
+  A["mention: @xeniabot tip @bob 5 STT"] --> B[poll mentions]
+  B --> C{parse intent<br/>Gemini → Claude → regex}
+  C -->|not a tip| R1[reply: help / ignore]
+  C -->|tip| D[resolve recipient handle]
+  D --> E[resolve sender wallet via API]
+  E --> F{guards:<br/>authorized? deposit ok?<br/>not self-tip?}
+  F -->|fail| R2[reply: reason]
+  F -->|pass| G[Escrow.tipOnBehalf]
+  G --> H{recipient registered?}
+  H -->|yes| I[direct transfer]
+  H -->|no| J[escrow + report claim to API]
+  I --> K[reply with explorer link]
+  J --> K
+```
 
 ## Tipping modes
 
@@ -224,4 +247,4 @@ If no key is set or the call fails, parsing falls back to a regex matcher.
 
 ## Deployment
 
-Frontend → Vercel, backend → Railway, database → Neon. See [DEPLOY.md](DEPLOY.md). `npm run preflight` checks env and on-chain contract bytecode before deploy.
+The Express server serves the built client in production, so a single Railway service runs the whole app (frontend + API); the database is Neon Postgres. `npm run preflight` checks the environment and probes the on-chain contract bytecode before deploy.

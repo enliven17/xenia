@@ -7,74 +7,72 @@
   @import url('https://cdn.jsdelivr.net/npm/@fontsource/maple-mono/index.min.css');
 
   :root{
-    --bg:#FCF8F8; --fg:#2D2D2D; --accent:#F5AFAF; --accent-ink:#A85F5F;
-    --muted:#8E8383; --border:#EAD6D6; --surface:#FBEFEF;
+    --bg:#FFFFFF; --fg:#1F1F1F; --accent:#F5AFAF; --accent-ink:#B25C6E;
+    --muted:#6E6E6E; --border:#E4E4E4; --surface:#F6F6F6;
   }
   *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   html,body{ margin:0; padding:0; background:var(--bg); color:var(--fg);
-    font-family:"Maple Mono",ui-monospace,monospace; font-size:11.5px; line-height:1.65; }
+    font-family:"Maple Mono",ui-monospace,monospace; font-size:10.8px; line-height:1.62; }
 
-  @page{ size:A4; margin:18mm 18mm 20mm; }
+  @page{ size:A4; margin:22mm 20mm 24mm; }
+
+  p{ margin:0 0 9px; text-align:justify; }
+  strong{ color:#000; }
+  .muted{ color:var(--muted); }
+  code{ color:var(--accent-ink); }
 
   /* ── cover ── */
-  .cover{ height:253mm; display:flex; flex-direction:column; justify-content:center; align-items:center;
+  .cover{ height:251mm; display:flex; flex-direction:column; justify-content:center; align-items:center;
     text-align:center; page-break-after:always; position:relative; }
   .cover .bar{ position:absolute; top:0; left:0; right:0; height:5px; background:var(--accent); }
-  .cover img{ height:84px; margin-bottom:26px; }
-  .cover h1{ font-size:40px; margin:0 0 6px; letter-spacing:-.01em; }
-  .cover .tag-pink{ color:var(--accent-ink); font-size:18px; margin-bottom:30px; }
-  .cover p{ color:var(--muted); font-size:13px; max-width:74%; line-height:1.7; }
+  .cover img{ height:84px; margin-bottom:24px; }
+  .cover h1{ font-size:42px; margin:0 0 6px; letter-spacing:-.01em; }
+  .cover .tag{ color:var(--accent-ink); font-size:18px; margin-bottom:28px; }
+  .cover p{ color:var(--muted); font-size:12.5px; max-width:76%; line-height:1.75; text-align:center; }
   .badge{ display:inline-block; border:1px solid var(--accent); color:var(--accent-ink);
-    font-size:11px; padding:6px 14px; letter-spacing:.1em; margin-top:30px; }
+    font-size:11px; padding:6px 14px; letter-spacing:.1em; margin-top:28px; }
   .cover .doc-meta{ position:absolute; bottom:0; font-size:11px; color:var(--muted); letter-spacing:.06em; }
 
   /* ── toc ── */
-  .toc{ page-break-after:always; }
-  .toc h2{ font-size:22px; margin:0 0 22px; }
-  .toc ol{ list-style:none; margin:0; padding:0; counter-reset:s; }
-  .toc li{ display:flex; align-items:baseline; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px; }
-  .toc li .n{ color:var(--accent-ink); width:34px; }
-  .toc li .t{ flex:1; }
-  .toc li .p{ color:var(--muted); }
+  .toc{ page-break-after:always; padding-top:6mm; }
+  .toc h2{ font-size:22px; margin:0 0 18px; }
+  .toc ol{ list-style:none; margin:0; padding:0; }
+  .toc li{ display:flex; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .toc li .n{ color:var(--accent-ink); width:32px; }
+  .toc li .t{ flex:1; } .toc li .p{ color:var(--muted); }
 
-  /* ── sections ── */
-  section.s{ page-break-before:always; }
-  h2.h{ font-size:21px; margin:0 0 4px; letter-spacing:-.01em; }
-  h2.h .num{ color:var(--accent-ink); margin-right:10px; }
-  .rule{ height:2px; background:var(--accent); width:46px; margin:0 0 18px; }
-  h3{ font-size:14px; margin:22px 0 8px; color:var(--accent-ink); }
-  p{ margin:0 0 11px; }
-  .lead{ font-size:13px; }
-  strong{ color:var(--fg); }
-  .muted{ color:var(--muted); }
+  /* ── headings ── */
+  h2.h{ font-size:18px; margin:20px 0 3px; letter-spacing:-.01em; break-after:avoid; }
+  h2.h:first-of-type{ margin-top:0; }
+  h2.h .num{ color:var(--accent-ink); margin-right:9px; }
+  .rule{ height:2px; background:var(--accent); width:42px; margin:0 0 12px; }
+  h3{ font-size:12.5px; margin:15px 0 6px; color:var(--accent-ink); break-after:avoid; }
 
-  ul.list{ list-style:none; margin:0 0 12px; padding:0; }
-  ul.list li{ position:relative; padding-left:20px; margin-bottom:7px; }
+  ul.list{ list-style:none; margin:0 0 10px; padding:0; }
+  ul.list li{ position:relative; padding-left:18px; margin-bottom:6px; }
   ul.list li::before{ content:">"; color:var(--accent-ink); position:absolute; left:0; }
 
-  table{ width:100%; border-collapse:collapse; margin:6px 0 14px; font-size:11px; }
-  th,td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
-  th{ color:var(--muted); font-weight:400; text-transform:uppercase; letter-spacing:.06em; font-size:10px; }
-  td.pink{ color:var(--accent-ink); }
-  tr td:first-child{ color:var(--fg); }
+  table{ width:100%; border-collapse:collapse; margin:5px 0 12px; font-size:10px; break-inside:avoid; }
+  th,td{ text-align:left; padding:6px 9px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th{ color:var(--muted); font-weight:400; text-transform:uppercase; letter-spacing:.06em; font-size:9px; }
+  td.k{ color:#000; white-space:nowrap; } td.pink{ color:var(--accent-ink); }
 
-  .mono{ border:1px solid var(--border); background:var(--surface); padding:10px 13px;
-    font-size:10.5px; color:var(--muted); white-space:pre-wrap; word-break:break-all; margin:6px 0 12px; }
+  .mono{ border:1px solid var(--border); background:var(--surface); padding:9px 12px;
+    font-size:10px; color:var(--muted); white-space:pre-wrap; word-break:break-all; margin:5px 0 11px; }
   .mono b{ color:var(--accent-ink); }
 
-  .cols{ display:flex; gap:16px; }
-  .col{ flex:1; }
+  .cols{ display:flex; gap:18px; } .col{ flex:1; }
 
-  figure{ margin:10px 0 16px; border:1px solid var(--border); background:#fff; padding:14px; }
-  figcaption{ font-size:10px; color:var(--muted); margin-top:8px; text-transform:uppercase; letter-spacing:.08em; }
+  figure{ margin:9px 0 13px; border:1px solid var(--border); background:#fff; padding:12px; break-inside:avoid; }
+  figcaption{ font-size:9px; color:var(--muted); margin-top:7px; text-transform:uppercase; letter-spacing:.08em; }
   svg{ display:block; width:100%; height:auto; }
   .sv-box{ fill:var(--surface); stroke:var(--border); }
-  .sv-acc{ fill:#FCEFEF; stroke:var(--accent); }
+  .sv-acc{ fill:#fff; stroke:var(--accent); stroke-width:1.3; }
   .sv-t{ fill:var(--fg); font-family:"Maple Mono",monospace; font-size:11px; }
   .sv-tm{ fill:var(--muted); font-family:"Maple Mono",monospace; font-size:9px; }
   .sv-ta{ fill:var(--accent-ink); font-family:"Maple Mono",monospace; font-size:11px; font-weight:700; }
   .sv-line{ stroke:var(--accent); stroke-width:1.4; fill:none; }
-  .pagefoot{ position:running(foot); }
+  section{ break-before:auto; }
 </style>
 </head>
 <body>
@@ -84,7 +82,7 @@
   <div class="bar"></div>
   <img src="logo.png" alt="Xenia" />
   <h1>Xenia</h1>
-  <div class="tag-pink">tip the post, not the platform.</div>
+  <div class="tag">tip the post, not the platform.</div>
   <p>On-chain tipping for X (Twitter), built on Somnia Network. Tip anyone by their handle in one click — sub-second finality, sub-cent gas, and an on-chain escrow that lets you tip people before they even have a wallet.</p>
   <div class="badge">SUBMISSION DOCUMENT · LIVE ON SOMNIA TESTNET</div>
   <div class="doc-meta">Encode Agentathon · chainId 50312 · xenia // somnia</div>
@@ -94,240 +92,216 @@
 <div class="toc">
   <h2>Contents</h2>
   <ol>
-    <li><span class="n">01</span><span class="t">Overview</span><span class="p">03</span></li>
-    <li><span class="n">02</span><span class="t">The problem</span><span class="p">04</span></li>
-    <li><span class="n">03</span><span class="t">The solution</span><span class="p">05</span></li>
-    <li><span class="n">04</span><span class="t">How it works — Mode A, Mode B, Claim</span><span class="p">06</span></li>
-    <li><span class="n">05</span><span class="t">Architecture</span><span class="p">08</span></li>
-    <li><span class="n">06</span><span class="t">Why Somnia</span><span class="p">09</span></li>
-    <li><span class="n">07</span><span class="t">Smart contracts</span><span class="p">10</span></li>
-    <li><span class="n">08</span><span class="t">Security</span><span class="p">11</span></li>
-    <li><span class="n">09</span><span class="t">Tech stack &amp; what's built</span><span class="p">12</span></li>
-    <li><span class="n">10</span><span class="t">Roadmap &amp; network reference</span><span class="p">13</span></li>
+    <li><span class="n">01</span><span class="t">Overview</span></li>
+    <li><span class="n">02</span><span class="t">The problem</span></li>
+    <li><span class="n">03</span><span class="t">The solution</span></li>
+    <li><span class="n">04</span><span class="t">Identity model — handle-first</span></li>
+    <li><span class="n">05</span><span class="t">How it works — Mode A, Mode B, Claim</span></li>
+    <li><span class="n">06</span><span class="t">Architecture</span></li>
+    <li><span class="n">07</span><span class="t">Smart contracts</span></li>
+    <li><span class="n">08</span><span class="t">Backend &amp; API</span></li>
+    <li><span class="n">09</span><span class="t">Frontend &amp; extension</span></li>
+    <li><span class="n">10</span><span class="t">The autonomous agent</span></li>
+    <li><span class="n">11</span><span class="t">Why Somnia</span></li>
+    <li><span class="n">12</span><span class="t">Security</span></li>
+    <li><span class="n">13</span><span class="t">Deployment</span></li>
+    <li><span class="n">14</span><span class="t">Status, roadmap &amp; network reference</span></li>
   </ol>
 </div>
 
-<!-- 01 Overview -->
-<section class="s">
-  <h2 class="h"><span class="num">01</span>Overview</h2><div class="rule"></div>
-  <p class="lead">Xenia turns every post on <strong>X (Twitter)</strong> into a tippable on-chain action. A Chrome extension injects a <strong>Tip</strong> button into the feed and onto profiles; clicking it sends value on <strong>Somnia Network</strong> that either lands instantly in the recipient's wallet or is held in an on-chain <strong>escrow</strong> until the recipient signs up — at which point they claim it with one click.</p>
-  <p>The entire stack — Solidity contracts, a Node backend, a React dashboard, and a browser extension — is built specifically around Somnia's strengths. Sub-second finality and sub-cent gas make per-post micro-tipping economically viable for the first time, turning a slow, fee-heavy chore into a single in-feed gesture.</p>
-  <h3>In one sentence</h3>
-  <p>Tip anyone on X by their handle, instantly and on-chain — even if they have never touched crypto.</p>
-</section>
+<!-- BODY (continuous flow) -->
 
-<!-- 02 Problem -->
-<section class="s">
-  <h2 class="h"><span class="num">02</span>The problem</h2><div class="rule"></div>
-  <p class="lead">Tipping creators on social media is broken in two directions.</p>
-  <div class="cols">
-    <div class="col">
-      <h3>Web2 tipping</h3>
-      <ul class="list">
-        <li>Both sides must create accounts</li>
-        <li>Platforms take 2–30% in fees</li>
-        <li>Payouts take days</li>
-        <li>Locked to one walled garden</li>
-      </ul>
-    </div>
-    <div class="col">
-      <h3>Web3 tipping</h3>
-      <ul class="list">
-        <li>Recipient needs a wallet on the right chain</li>
-        <li>Gas frequently costs more than the tip</li>
-        <li>No way to tip an off-chain identity</li>
-        <li>Confirmation latency kills the gesture</li>
-      </ul>
-    </div>
+<h2 class="h"><span class="num">01</span>Overview</h2><div class="rule"></div>
+<p>Xenia turns every post on <strong>X (Twitter)</strong> into a tippable on-chain action. A Chrome extension injects a <strong>Tip</strong> button into the X feed and onto profiles; clicking it triggers a transaction on <strong>Somnia Network</strong> that either lands instantly in the recipient's wallet or is held in an on-chain <strong>escrow</strong> keyed by the recipient's handle. When that recipient later signs up, the backend binds their wallet on-chain and they claim every tip waiting for them with a single click.</p>
+<p>The entire stack — two Solidity contracts, a Node/Express backend with a Postgres index, a React dashboard, a browser extension, and an AI command bot — is built specifically around Somnia's strengths. Sub-second finality and sub-cent gas are not a nice-to-have here; they are the precondition that makes per-post micro-tipping economically and experientially viable for the first time. On a slower or more expensive chain, a $0.10 tip makes no sense: the gas eats the value and the confirmation latency kills the gesture. On Somnia, tipping collapses into a single in-feed tap that settles before the toast notification fades.</p>
+<p>Two complementary flows share one contract. In <strong>Mode A</strong>, the user's own wallet signs the tip directly from the extension or the web app. In <strong>Mode B</strong>, the user pre-funds a delegated balance and then tips by tweeting a natural-language command that an AI bot parses and executes on their behalf — without ever being able to withdraw their funds. Both paths converge on the same escrow, the same handle-based identity, and the same one-click claim.</p>
+<p class="muted">In one sentence: tip anyone on X by their handle, instantly and on-chain, even if they have never touched crypto.</p>
+
+<h2 class="h"><span class="num">02</span>The problem</h2><div class="rule"></div>
+<p>Tipping creators on social media is broken in two opposite directions, and neither serves a casual, in-the-moment gesture.</p>
+<div class="cols">
+  <div class="col"><h3>Web2 tipping</h3>
+    <ul class="list">
+      <li>Both the sender and the creator must create accounts on the same platform.</li>
+      <li>The platform takes anywhere from 2% to 30% of every tip.</li>
+      <li>Payouts are batched and arrive days later, behind minimums and KYC.</li>
+      <li>Value is locked inside one walled garden and cannot move.</li>
+    </ul>
   </div>
-  <p>The net result: tipping is not a fluid, in-feed gesture. It is a friction-filled chore that almost no one actually does.</p>
-</section>
+  <div class="col"><h3>Web3 tipping</h3>
+    <ul class="list">
+      <li>The recipient must already hold a wallet on the exact right chain.</li>
+      <li>Gas frequently costs more than the tip itself.</li>
+      <li>There is no way to reward an identity that is still off-chain.</li>
+      <li>Multi-second confirmation latency turns a gesture into a transaction.</li>
+    </ul>
+  </div>
+</div>
+<p>The compound result is that tipping is not the fluid, in-feed reflex it should be. It is a friction-filled chore involving sign-ups, fees, address lookups, network switches, and waiting — so almost no one actually does it, and creators capture almost none of the appreciation their work generates.</p>
 
-<!-- 03 Solution -->
-<section class="s">
-  <h2 class="h"><span class="num">03</span>The solution</h2><div class="rule"></div>
-  <p class="lead">Xenia removes both walls.</p>
-  <ul class="list">
-    <li><strong>Tip anyone, even non-crypto users.</strong> Tips to an unregistered handle are held in an on-chain escrow keyed by the handle. The recipient signs up once, the backend binds their wallet on-chain, and the funds are theirs.</li>
-    <li><strong>Tipping is a single click inside X.</strong> The extension injects a Tip button into every tweet and onto profiles, and auto-adds Somnia to the wallet so users never configure a network.</li>
-    <li><strong>Two modes, one contract.</strong> A direct tip signed by the user's wallet, and a Twitter-command tip executed by an AI bot from a pre-funded, delegated balance.</li>
-    <li><strong>Handle-first identity.</strong> Every flow — tip, claim, registration — is keyed by the lowercased X handle, the only identifier a sender knows at tip time.</li>
-  </ul>
-</section>
+<h2 class="h"><span class="num">03</span>The solution</h2><div class="rule"></div>
+<p>Xenia removes both walls at once: the wallet wall on the recipient side, and the friction wall on the sender side.</p>
+<ul class="list">
+  <li><strong>Tip anyone, even non-crypto users.</strong> A tip to an unregistered handle is held in an on-chain escrow keyed by that handle. The recipient is not required to do anything in advance. When they eventually sign up, the backend binds their handle to their wallet on-chain and the escrowed balance becomes claimable — no pre-existing wallet, no chain, no setup.</li>
+  <li><strong>Tipping is one click, inside X.</strong> The extension injects a Tip button into every tweet and onto profiles. Before any transaction it auto-adds Somnia to the user's wallet, so a first-time tipper never has to find an RPC URL or a chain ID.</li>
+  <li><strong>Two modes, one contract.</strong> Mode A is a direct, wallet-signed tip. Mode B lets a user tip by tweeting a command that an AI bot executes from a pre-authorized deposit — useful for power users and for tipping without leaving the timeline.</li>
+  <li><strong>Handle-first identity.</strong> Every flow is keyed by the lowercased X handle, the only identifier a sender reliably knows at tip time. This single decision is what makes "tip someone who isn't here yet" actually work.</li>
+</ul>
 
-<!-- 04 How it works -->
-<section class="s">
-  <h2 class="h"><span class="num">04</span>How it works</h2><div class="rule"></div>
+<h2 class="h"><span class="num">04</span>Identity model — handle-first</h2><div class="rule"></div>
+<p>The central design decision in Xenia is that the on-chain escrow is keyed by the <strong>lowercased X handle</strong> (for example <code>vitalik</code>), not by a numeric account id and not by a wallet address. The reasoning is direct: at the moment a tip is sent, the only thing the sender knows about an unregistered recipient is their handle. A numeric Twitter id is not visible in the feed, and the recipient has no wallet yet by definition.</p>
+<p>Keying by handle makes the entire lifecycle internally consistent. The same lowercased handle is used by <code>tip()</code> when funds are escrowed, by <code>registerWallet()</code> when the recipient binds their wallet, and by <code>claim()</code> when they withdraw. Every surface that produces a tip — the web app, the extension, and the AI bot — normalizes the handle the same way (strip a leading <code>@</code>, lowercase) so a tip from any source lands in exactly the bucket the recipient later claims from. An earlier iteration keyed sends by handle but claims by numeric id; that mismatch silently made escrowed tips unclaimable, and resolving it is what unified the model described here.</p>
 
-  <h3>Mode A — direct tip (extension / web)</h3>
-  <p class="muted">The user's own wallet signs <code>Escrow.tip(handle)</code>. If the recipient is registered, STT transfers directly; otherwise it is escrowed under the handle.</p>
-  <figure>
-    <svg viewBox="0 0 720 120" role="img" aria-label="Mode A flow">
-      <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#A85F5F"/></marker></defs>
-      <rect class="sv-box" x="6" y="34" width="150" height="52"/><text class="sv-t" x="81" y="58" text-anchor="middle">Click Tip</text><text class="sv-tm" x="81" y="74" text-anchor="middle">on X feed / profile</text>
-      <line class="sv-line" x1="158" y1="60" x2="196" y2="60" marker-end="url(#ar)"/>
-      <rect class="sv-acc" x="200" y="34" width="170" height="52"/><text class="sv-ta" x="285" y="58" text-anchor="middle">Escrow.tip(handle)</text><text class="sv-tm" x="285" y="74" text-anchor="middle">wallet-signed, payable</text>
-      <line class="sv-line" x1="372" y1="60" x2="410" y2="60" marker-end="url(#ar)"/>
-      <rect class="sv-box" x="414" y="6" width="300" height="46"/><text class="sv-t" x="564" y="26" text-anchor="middle">registered →</text><text class="sv-ta" x="564" y="42" text-anchor="middle">direct transfer &lt; 1s</text>
-      <rect class="sv-box" x="414" y="66" width="300" height="46"/><text class="sv-t" x="564" y="86" text-anchor="middle">unregistered →</text><text class="sv-ta" x="564" y="102" text-anchor="middle">held in escrow, indexed as a claim</text>
-    </svg>
-    <figcaption>Figure 1 — Mode A direct tip</figcaption>
-  </figure>
+<h2 class="h"><span class="num">05</span>How it works</h2><div class="rule"></div>
+<h3>Mode A — direct tip (extension / web)</h3>
+<p>The user clicks Tip on a tweet or a profile. Their own wallet — a Privy embedded wallet on the web app, or MetaMask in the extension — signs <code>Escrow.tip(handle)</code> with the tip amount attached as value. If the handle is already registered, the contract transfers the funds directly to the recipient's wallet in under a second. If it is not, the contract pushes the tip into a per-handle escrow array and emits a <code>TipSent</code> event carrying the escrow index; the backend reads that receipt and indexes a pending claim so the recipient will see it the moment they join.</p>
+<figure>
+  <svg viewBox="0 0 720 120" role="img" aria-label="Mode A flow">
+    <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#B25C6E"/></marker></defs>
+    <rect class="sv-box" x="6" y="34" width="150" height="52"/><text class="sv-t" x="81" y="58" text-anchor="middle">Click Tip</text><text class="sv-tm" x="81" y="74" text-anchor="middle">on X feed / profile</text>
+    <line class="sv-line" x1="158" y1="60" x2="196" y2="60" marker-end="url(#ar)"/>
+    <rect class="sv-acc" x="200" y="34" width="170" height="52"/><text class="sv-ta" x="285" y="58" text-anchor="middle">Escrow.tip(handle)</text><text class="sv-tm" x="285" y="74" text-anchor="middle">wallet-signed, payable</text>
+    <line class="sv-line" x1="372" y1="60" x2="410" y2="60" marker-end="url(#ar)"/>
+    <rect class="sv-box" x="414" y="6" width="300" height="46"/><text class="sv-t" x="564" y="26" text-anchor="middle">registered →</text><text class="sv-ta" x="564" y="42" text-anchor="middle">direct transfer &lt; 1s</text>
+    <rect class="sv-box" x="414" y="66" width="300" height="46"/><text class="sv-t" x="564" y="86" text-anchor="middle">unregistered →</text><text class="sv-ta" x="564" y="102" text-anchor="middle">escrow, indexed as a claim</text>
+  </svg>
+  <figcaption>Figure 1 — Mode A direct tip</figcaption>
+</figure>
 
-  <h3>Mode B — Twitter command</h3>
-  <p class="muted">The user pre-deposits and authorizes the bot. They tweet a command; the bot parses intent with Gemini and calls <code>tipOnBehalf</code> — it can only forward funds, never withdraw.</p>
-  <figure>
-    <svg viewBox="0 0 720 96" role="img" aria-label="Mode B flow">
-      <defs><marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#A85F5F"/></marker></defs>
-      <rect class="sv-box" x="6" y="26" width="150" height="46"/><text class="sv-t" x="81" y="46" text-anchor="middle">deposit() +</text><text class="sv-t" x="81" y="62" text-anchor="middle">authorize(bot)</text>
-      <line class="sv-line" x1="158" y1="49" x2="190" y2="49" marker-end="url(#ar2)"/>
-      <rect class="sv-box" x="194" y="26" width="160" height="46"/><text class="sv-t" x="274" y="46" text-anchor="middle">tweet:</text><text class="sv-ta" x="274" y="62" text-anchor="middle">@xeniaBot tip @x 5</text>
-      <line class="sv-line" x1="356" y1="49" x2="388" y2="49" marker-end="url(#ar2)"/>
-      <rect class="sv-acc" x="392" y="26" width="150" height="46"/><text class="sv-ta" x="467" y="46" text-anchor="middle">Gemini bot</text><text class="sv-tm" x="467" y="62" text-anchor="middle">parse intent</text>
-      <line class="sv-line" x1="544" y1="49" x2="576" y2="49" marker-end="url(#ar2)"/>
-      <rect class="sv-box" x="580" y="26" width="134" height="46"/><text class="sv-t" x="647" y="46" text-anchor="middle">tipOnBehalf()</text><text class="sv-tm" x="647" y="62" text-anchor="middle">forward only</text>
-    </svg>
-    <figcaption>Figure 2 — Mode B Twitter command</figcaption>
-  </figure>
+<h3>Mode B — Twitter command</h3>
+<p>A user who wants to tip without leaving the timeline first calls <code>deposit()</code> to fund an internal balance, then <code>authorize(bot)</code> to let the Xenia bot spend from it. They then tweet a natural-language command such as <code>@xeniaBot tip @bob 5 STT</code>. The bot reads the mention, parses the intent with Gemini (with a regex fallback if the model is unavailable), resolves the recipient, and calls <code>tipOnBehalf(sender, handle, amount)</code>. The contract verifies the authorization, debits the sender's deposit, and either pays the recipient directly or escrows the tip — the bot can only forward funds to the resolved recipient and can never withdraw to an arbitrary address.</p>
+<figure>
+  <svg viewBox="0 0 720 96" role="img" aria-label="Mode B flow">
+    <defs><marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#B25C6E"/></marker></defs>
+    <rect class="sv-box" x="6" y="26" width="150" height="46"/><text class="sv-t" x="81" y="46" text-anchor="middle">deposit() +</text><text class="sv-t" x="81" y="62" text-anchor="middle">authorize(bot)</text>
+    <line class="sv-line" x1="158" y1="49" x2="190" y2="49" marker-end="url(#ar2)"/>
+    <rect class="sv-box" x="194" y="26" width="160" height="46"/><text class="sv-t" x="274" y="46" text-anchor="middle">tweet:</text><text class="sv-ta" x="274" y="62" text-anchor="middle">@xeniaBot tip @x 5</text>
+    <line class="sv-line" x1="356" y1="49" x2="388" y2="49" marker-end="url(#ar2)"/>
+    <rect class="sv-acc" x="392" y="26" width="150" height="46"/><text class="sv-ta" x="467" y="46" text-anchor="middle">Gemini bot</text><text class="sv-tm" x="467" y="62" text-anchor="middle">parse intent</text>
+    <line class="sv-line" x1="544" y1="49" x2="576" y2="49" marker-end="url(#ar2)"/>
+    <rect class="sv-box" x="580" y="26" width="134" height="46"/><text class="sv-t" x="647" y="46" text-anchor="middle">tipOnBehalf()</text><text class="sv-tm" x="647" y="62" text-anchor="middle">forward only</text>
+  </svg>
+  <figcaption>Figure 2 — Mode B Twitter command</figcaption>
+</figure>
 
-  <h3>Claim</h3>
-  <p class="muted">An escrowed recipient signs up, the backend binds their handle to their wallet on-chain (immutable), and they pull all pending tips.</p>
-  <figure>
-    <svg viewBox="0 0 720 70" role="img" aria-label="Claim flow">
-      <defs><marker id="ar3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#A85F5F"/></marker></defs>
-      <rect class="sv-box" x="6" y="16" width="170" height="40"/><text class="sv-t" x="91" y="40" text-anchor="middle">sign up (Privy)</text>
-      <line class="sv-line" x1="178" y1="36" x2="214" y2="36" marker-end="url(#ar3)"/>
-      <rect class="sv-acc" x="218" y="16" width="240" height="40"/><text class="sv-ta" x="338" y="40" text-anchor="middle">registerWallet(handle, wallet)</text>
-      <line class="sv-line" x1="460" y1="36" x2="496" y2="36" marker-end="url(#ar3)"/>
-      <rect class="sv-box" x="500" y="16" width="214" height="40"/><text class="sv-t" x="607" y="40" text-anchor="middle">claim(handle) → wallet</text>
-    </svg>
-    <figcaption>Figure 3 — Claim flow</figcaption>
-  </figure>
-</section>
+<h3>Claim</h3>
+<p>When a recipient who was tipped into escrow finally signs up, the backend calls <code>registerWallet(handle, wallet)</code> idempotently — it first checks whether the handle is already bound, and only writes (and waits for the receipt) when it is not, so a claim never races an unbound state. The recipient then calls <code>claim(handle)</code> from their own wallet, which pulls the entire pending balance in a single transaction.</p>
+<figure>
+  <svg viewBox="0 0 720 70" role="img" aria-label="Claim flow">
+    <defs><marker id="ar3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#B25C6E"/></marker></defs>
+    <rect class="sv-box" x="6" y="16" width="170" height="40"/><text class="sv-t" x="91" y="40" text-anchor="middle">sign up (Privy)</text>
+    <line class="sv-line" x1="178" y1="36" x2="214" y2="36" marker-end="url(#ar3)"/>
+    <rect class="sv-acc" x="218" y="16" width="240" height="40"/><text class="sv-ta" x="338" y="40" text-anchor="middle">registerWallet(handle, wallet)</text>
+    <line class="sv-line" x1="460" y1="36" x2="496" y2="36" marker-end="url(#ar3)"/>
+    <rect class="sv-box" x="500" y="16" width="214" height="40"/><text class="sv-t" x="607" y="40" text-anchor="middle">claim(handle) → wallet</text>
+  </svg>
+  <figcaption>Figure 3 — Claim flow</figcaption>
+</figure>
 
-<!-- 05 Architecture -->
-<section class="s">
-  <h2 class="h"><span class="num">05</span>Architecture</h2><div class="rule"></div>
-  <p class="lead">One escrow contract on Somnia, reached from four surfaces through a single backend.</p>
-  <figure>
-    <svg viewBox="0 0 720 300" role="img" aria-label="System architecture">
-      <text class="sv-ta" x="20" y="22">Somnia Network</text>
-      <rect class="sv-acc" x="20" y="32" width="330" height="58"/><text class="sv-ta" x="185" y="56" text-anchor="middle">Escrow.sol</text><text class="sv-tm" x="185" y="74" text-anchor="middle">tip · claim · deposit · authorize · tipOnBehalf · refund</text>
-      <rect class="sv-box" x="364" y="32" width="336" height="58"/><text class="sv-t" x="532" y="56" text-anchor="middle">ScreenshotRegistry.sol</text><text class="sv-tm" x="532" y="74" text-anchor="middle">on-chain proof-of-post</text>
-      <line class="sv-line" x1="360" y1="118" x2="360" y2="96" marker-end="url(#ara)"/>
-      <defs><marker id="ara" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#A85F5F"/></marker></defs>
-      <text class="sv-tm" x="372" y="112">viem (RPC)</text>
-      <rect class="sv-box" x="20" y="122" width="680" height="56"/><text class="sv-t" x="360" y="146" text-anchor="middle">Backend — Express + Drizzle + Neon Postgres</text><text class="sv-tm" x="360" y="164" text-anchor="middle">REST API · Privy auth · Gemini Twitter bot · escrow indexing</text>
-      <line class="sv-line" x1="200" y1="184" x2="200" y2="206" marker-end="url(#ara)"/>
-      <line class="sv-line" x1="520" y1="184" x2="520" y2="206" marker-end="url(#ara)"/>
-      <rect class="sv-box" x="20" y="210" width="330" height="56"/><text class="sv-t" x="185" y="234" text-anchor="middle">React web app</text><text class="sv-tm" x="185" y="252" text-anchor="middle">Privy embedded wallet · dashboard</text>
-      <rect class="sv-box" x="370" y="210" width="330" height="56"/><text class="sv-t" x="535" y="234" text-anchor="middle">Chrome extension (MV3)</text><text class="sv-tm" x="535" y="252" text-anchor="middle">MetaMask · in-feed + profile Tip button</text>
-    </svg>
-    <figcaption>Figure 4 — System architecture</figcaption>
-  </figure>
-  <p class="muted">The user's wallet signs every value-moving call (tip, claim, deposit, authorize). The backend wallet is the contract owner and only signs <code>registerWallet</code> and <code>registerScreenshot</code>. The bot signs <code>tipOnBehalf</code> from delegated deposits and can never withdraw.</p>
-</section>
+<h2 class="h"><span class="num">06</span>Architecture</h2><div class="rule"></div>
+<p>One escrow contract on Somnia is reached from four surfaces through a single backend. The split of responsibilities is deliberate: the user's wallet signs everything that moves value, the backend wallet (which is the contract owner) only signs the two owner-restricted bindings, and the bot signs only delegated forwards.</p>
+<figure>
+  <svg viewBox="0 0 720 300" role="img" aria-label="System architecture">
+    <defs><marker id="ara" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#B25C6E"/></marker></defs>
+    <text class="sv-ta" x="20" y="22">Somnia Network</text>
+    <rect class="sv-acc" x="20" y="32" width="330" height="58"/><text class="sv-ta" x="185" y="56" text-anchor="middle">Escrow.sol</text><text class="sv-tm" x="185" y="74" text-anchor="middle">tip · claim · deposit · authorize · tipOnBehalf · refund</text>
+    <rect class="sv-box" x="364" y="32" width="336" height="58"/><text class="sv-t" x="532" y="56" text-anchor="middle">ScreenshotRegistry.sol</text><text class="sv-tm" x="532" y="74" text-anchor="middle">on-chain proof-of-post</text>
+    <line class="sv-line" x1="360" y1="118" x2="360" y2="96" marker-end="url(#ara)"/>
+    <text class="sv-tm" x="372" y="112">viem (RPC)</text>
+    <rect class="sv-box" x="20" y="122" width="680" height="56"/><text class="sv-t" x="360" y="146" text-anchor="middle">Backend — Express + Drizzle + Neon Postgres</text><text class="sv-tm" x="360" y="164" text-anchor="middle">REST API · Privy auth · Gemini Twitter bot · escrow indexing</text>
+    <line class="sv-line" x1="200" y1="184" x2="200" y2="206" marker-end="url(#ara)"/>
+    <line class="sv-line" x1="520" y1="184" x2="520" y2="206" marker-end="url(#ara)"/>
+    <rect class="sv-box" x="20" y="210" width="330" height="56"/><text class="sv-t" x="185" y="234" text-anchor="middle">React web app</text><text class="sv-tm" x="185" y="252" text-anchor="middle">Privy embedded wallet · dashboard · docs</text>
+    <rect class="sv-box" x="370" y="210" width="330" height="56"/><text class="sv-t" x="535" y="234" text-anchor="middle">Chrome extension (MV3)</text><text class="sv-tm" x="535" y="252" text-anchor="middle">MetaMask · in-feed + profile Tip button</text>
+  </svg>
+  <figcaption>Figure 4 — System architecture</figcaption>
+</figure>
+<p>The web app and the extension both read the active contract address and the bot address from a single <code>/api/somnia/network</code> endpoint, so there is one source of truth for deployment configuration. The extension additionally ships a hard-coded fallback escrow address, which means a tip can still be signed and broadcast even if the backend is briefly unreachable.</p>
 
-<!-- 06 Why Somnia -->
-<section class="s">
-  <h2 class="h"><span class="num">06</span>Why Somnia</h2><div class="rule"></div>
-  <p class="lead">Sub-second finality and sub-cent gas are what make per-post micro-tipping possible at all.</p>
-  <table>
-    <tr><th>Property</th><th>Typical L1/L2</th><th>Somnia</th><th>Why it matters for Xenia</th></tr>
-    <tr><td>Finality</td><td class="muted">2–12s</td><td class="pink">&lt; 1s</td><td class="muted">In-feed tipping feels like Web2</td></tr>
-    <tr><td>Gas / tip</td><td class="muted">$0.05–$1.00</td><td class="pink">&lt; $0.001</td><td class="muted">$0.10–$1.00 tips are economically sane</td></tr>
-    <tr><td>Throughput</td><td class="muted">100–4,000 TPS</td><td class="pink">1,000,000+ TPS</td><td class="muted">Headroom for a viral app, no fee spikes</td></tr>
-    <tr><td>EVM</td><td class="muted">Yes</td><td class="pink">Yes</td><td class="muted">Solidity + Hardhat + viem port cleanly</td></tr>
-  </table>
-  <p>Xenia was originally conceived on a slower chain. The Somnia migration is what enables the consumer-grade UX: sub-second finality changes the gesture from "I'm sending a transaction" into "I just tapped a button."</p>
-</section>
-
-<!-- 07 Contracts -->
-<section class="s">
-  <h2 class="h"><span class="num">07</span>Smart contracts</h2><div class="rule"></div>
-  <h3>Escrow.sol</h3>
-  <p class="muted">A single contract that handles both tipping modes and the lifecycle of unclaimed funds.</p>
-  <table>
-    <tr><th>Function</th><th>Mode</th><th>Description</th></tr>
-    <tr><td>tip(handle) <span class="muted">payable</span></td><td class="pink">A</td><td class="muted">Direct transfer if registered, else escrow under the handle</td></tr>
-    <tr><td>deposit() <span class="muted">payable</span></td><td class="pink">B</td><td class="muted">Credits the user's internal balance</td></tr>
-    <tr><td>authorize(delegate)</td><td class="pink">B</td><td class="muted">Allow the bot to call tipOnBehalf for this user</td></tr>
-    <tr><td>tipOnBehalf(sender, handle, amount)</td><td class="pink">B</td><td class="muted">Delegate-only; forwards from sender's deposit</td></tr>
-    <tr><td>claim(handle)</td><td class="muted">—</td><td class="muted">Registered wallet pulls all pending escrow tips</td></tr>
-    <tr><td>refund(handle, idx)</td><td class="muted">—</td><td class="muted">Sender refund after a 90-day window</td></tr>
-    <tr><td>registerWallet(handle, wallet)</td><td class="muted">—</td><td class="muted">onlyOwner; immutable once set</td></tr>
-  </table>
-  <h3>ScreenshotRegistry.sol</h3>
-  <p class="muted">Lightweight on-chain proof-of-post: <code>registerScreenshot(cid, tweetId)</code>, <code>verifyScreenshot(cid)</code>, <code>getProofByTweetId(tweetId)</code>.</p>
-  <div class="mono">Escrow      <b>0xEf0ca54F3C195737880127df62069C5B5A17B458</b>
+<h2 class="h"><span class="num">07</span>Smart contracts</h2><div class="rule"></div>
+<h3>Escrow.sol</h3>
+<p>A single contract handles both tipping modes and the full lifecycle of unclaimed funds. Escrowed tips live in a per-handle array; registrations bind a handle to a wallet exactly once; Mode B funds live in a separate per-user deposit balance with an explicit delegate authorization map.</p>
+<table>
+  <tr><th>Function</th><th>Mode</th><th>Description</th></tr>
+  <tr><td class="k">tip(handle) <span class="muted">payable</span></td><td class="pink">A</td><td class="muted">Direct transfer if the handle is registered, otherwise escrow under the handle and emit TipSent.</td></tr>
+  <tr><td class="k">deposit() <span class="muted">payable</span></td><td class="pink">B</td><td class="muted">Credit the caller's internal balance for later delegated tipping.</td></tr>
+  <tr><td class="k">authorize(delegate)</td><td class="pink">B</td><td class="muted">Allow a delegate (the bot) to call tipOnBehalf for the caller; revocable.</td></tr>
+  <tr><td class="k">tipOnBehalf(sender, handle, amount)</td><td class="pink">B</td><td class="muted">Delegate-only; debit sender's deposit and forward to the resolved recipient.</td></tr>
+  <tr><td class="k">claim(handle)</td><td class="muted">—</td><td class="muted">The registered wallet pulls all pending escrow tips for the handle.</td></tr>
+  <tr><td class="k">refund(handle, idx)</td><td class="muted">—</td><td class="muted">The original sender reclaims a specific tip after a 90-day window if never claimed.</td></tr>
+  <tr><td class="k">registerWallet(handle, wallet)</td><td class="muted">—</td><td class="muted">onlyOwner; binds a handle to a wallet, immutable once set.</td></tr>
+  <tr><td class="k">withdrawDeposit / deauthorize / setFee / withdrawFees</td><td class="muted">—</td><td class="muted">User and admin housekeeping; fee capped at 5%.</td></tr>
+</table>
+<h3>ScreenshotRegistry.sol</h3>
+<p>A lightweight on-chain proof-of-post that anchors a screenshot CID and tweet id with a timestamp and recorder: <code>registerScreenshot(cid, tweetId)</code> (owner-only), <code>verifyScreenshot(cid)</code>, and <code>getProofByTweetId(tweetId)</code>. It exists to give tipped posts an immutable record, which is only affordable at Somnia's gas levels.</p>
+<div class="mono">Escrow      <b>0xEf0ca54F3C195737880127df62069C5B5A17B458</b>
 Registry    <b>0x9C3c6b9cc4ECdA73e65A240DD0cD075ce202AfE3</b>
 Chain       <b>Somnia Shannon Testnet · chainId 50312 · STT</b></div>
-</section>
 
-<!-- 08 Security -->
-<section class="s">
-  <h2 class="h"><span class="num">08</span>Security</h2><div class="rule"></div>
-  <ul class="list">
-    <li><strong>Reentrancy guard</strong> on every value-moving external call.</li>
-    <li><strong>Fee accounting separated</strong> from user funds — fee withdrawals can never touch balances.</li>
-    <li><strong>Immutable wallet binding</strong> — a handle can be bound to a wallet exactly once.</li>
-    <li><strong>Scoped bot delegation</strong> — tipOnBehalf can only forward to the resolved recipient, never to an arbitrary address, and never withdraw.</li>
-    <li><strong>90-day sender refund</strong> safety net for tips that are never claimed.</li>
-    <li><strong>Two-step ownership transfer</strong> on both contracts; platform fee capped at 5%.</li>
-    <li><strong>No custody of keys</strong> — Privy embedded wallets stay client-side; the backend never holds user private keys.</li>
-  </ul>
-</section>
+<h2 class="h"><span class="num">08</span>Backend &amp; API</h2><div class="rule"></div>
+<p>The backend is a Node + Express service in TypeScript, using Drizzle ORM over a Neon-compatible Postgres database and viem as the chain client. Authentication is handled by Privy: the frontend attaches a Privy access token as a bearer header, the backend verifies it, and upserts a user row. The chain client is configured for both Somnia testnet (50312, STT) and mainnet (50313, SOMI), with the active chain chosen from the environment at boot.</p>
+<p>A key backend responsibility is <strong>escrow indexing</strong>. When a tip is confirmed, the backend reads the transaction receipt, decodes the <code>TipSent</code> event, and — only for tips that actually went to escrow — writes an idempotent pending-claim row keyed on the transaction hash and escrow index. The Mode B bot reports its own escrow tips through a dedicated endpoint so that bot-driven tips appear in the recipient's claim list too.</p>
+<table>
+  <tr><th>Method · Path</th><th>Purpose</th></tr>
+  <tr><td class="k">POST /api/tips/send</td><td class="muted">Record a tip and return its row id.</td></tr>
+  <tr><td class="k">POST /api/tips/:id/confirm</td><td class="muted">Attach the tx hash and index the escrow claim.</td></tr>
+  <tr><td class="k">GET /api/claims</td><td class="muted">The signed-in user's pending claims.</td></tr>
+  <tr><td class="k">GET /api/somnia/network</td><td class="muted">Chain, contract addresses, and bot address.</td></tr>
+  <tr><td class="k">POST /api/somnia/register</td><td class="muted">Idempotent registerWallet for the current user.</td></tr>
+  <tr><td class="k">GET /api/somnia/balance/:address</td><td class="muted">Native STT/SOMI balance.</td></tr>
+  <tr><td class="k">POST /api/proof/register · GET /api/proof/:tweetId</td><td class="muted">On-chain proof-of-post register and lookup.</td></tr>
+  <tr><td class="k">POST /api/bot/record-claim · /api/bot/*</td><td class="muted">Bot-key-authenticated escrow reporting and notifications.</td></tr>
+</table>
 
-<!-- 09 Tech stack -->
-<section class="s">
-  <h2 class="h"><span class="num">09</span>Tech stack &amp; what's built</h2><div class="rule"></div>
-  <div class="cols">
-    <div class="col">
-      <h3>Stack</h3>
-      <ul class="list">
-        <li>Solidity + Hardhat (contracts)</li>
-        <li>Node + Express + Drizzle ORM</li>
-        <li>Neon Postgres</li>
-        <li>viem (chain client)</li>
-        <li>React 18 + Vite + Tailwind + Privy</li>
-        <li>Chrome MV3 extension</li>
-        <li>Python bot · Gemini / Claude NLU</li>
-      </ul>
-    </div>
-    <div class="col">
-      <h3>Working on testnet</h3>
-      <ul class="list">
-        <li>Both contracts deployed &amp; live</li>
-        <li>Real on-chain tip / claim / deposit</li>
-        <li>Escrow tips indexed to Postgres</li>
-        <li>Extension: in-feed + profile Tip button</li>
-        <li>Gemini-powered command bot</li>
-        <li>Privy auth (X or wallet)</li>
-        <li>Deploy-ready: Railway + Neon + preflight</li>
-      </ul>
-    </div>
-  </div>
-</section>
+<h2 class="h"><span class="num">09</span>Frontend &amp; extension</h2><div class="rule"></div>
+<h3>Web app</h3>
+<p>The dashboard is a React 18 + Vite application styled with Tailwind in a warm monospace "terminal" design system. Authentication and embedded wallets come from Privy, configured with Somnia as the default chain. Users can send single and batch tips, deposit and authorize the bot for Mode B, view their pending claims and on-chain transaction history, and read a built-in documentation page. In production the same Express server serves this built client, so the whole product runs from a single origin and a single deploy.</p>
+<h3>Chrome extension (MV3)</h3>
+<p>The extension injects a Tip button into tweets and onto profile headers on x.com and twitter.com. Because content scripts cannot see the page's injected wallet, a small page-world bridge relays requests to MetaMask over <code>postMessage</code>; before every transaction it ensures the wallet is on Somnia, adding the network automatically on first use. The tip is signed by the user's own wallet, broadcast on-chain, and then reported to the backend best-effort — so a tip succeeds even when the user has never opened the web app.</p>
 
-<!-- 10 Roadmap -->
-<section class="s">
-  <h2 class="h"><span class="num">10</span>Roadmap &amp; network reference</h2><div class="rule"></div>
-  <table>
-    <tr><th>Phase</th><th>Scope</th></tr>
-    <tr><td class="pink">Now</td><td class="muted">Live on Somnia testnet · Mode A end-to-end · escrow indexing · extension demo</td></tr>
-    <tr><td class="pink">Next</td><td class="muted">Mainnet deployment (chainId 50313, SOMI) · Chrome Web Store listing · X login via Privy</td></tr>
-    <tr><td class="pink">Later</td><td class="muted">@xeniaBot launch on a paid X API tier · indexer-backed leaderboards · contract audit</td></tr>
-  </table>
-  <h3>Network reference</h3>
-  <table>
-    <tr><th>Property</th><th>Testnet</th><th>Mainnet</th></tr>
-    <tr><td>Chain ID</td><td class="pink">50312</td><td class="pink">50313</td></tr>
-    <tr><td>Symbol</td><td class="muted">STT</td><td class="muted">SOMI</td></tr>
-    <tr><td>RPC</td><td class="muted">dream-rpc.somnia.network</td><td class="muted">mainnet-rpc.somnia.network</td></tr>
-    <tr><td>Explorer</td><td class="muted">shannon-explorer.somnia.network</td><td class="muted">explorer.somnia.network</td></tr>
-  </table>
-  <p class="muted" style="margin-top:18px;text-align:center;">xenia // somnia — tip the post, not the platform.</p>
-</section>
+<h2 class="h"><span class="num">10</span>The autonomous agent</h2><div class="rule"></div>
+<p>Mode B is driven by an autonomous agent — a Python service that turns a tweet into an on-chain action. It is provider-agnostic behind a single interface: by default it uses Google Gemini to parse a free-form tip command into structured JSON, falls back to Anthropic Claude if configured, and finally to a deterministic regex matcher if no model is available — so the bot degrades gracefully and never crashes on a parsing failure. It also includes a price helper (so a user can tip a dollar amount), basic fraud checks (it refuses self-tips), and on-chain guards (it verifies the sender's deposit and the bot's authorization before sending). After a successful <code>tipOnBehalf</code>, the bot inspects the receipt for an escrow event and, if present, reports it to the backend so the recipient can claim.</p>
+
+<h2 class="h"><span class="num">11</span>Why Somnia</h2><div class="rule"></div>
+<p>Sub-second finality and sub-cent gas are precisely the properties that make per-post micro-tipping possible at all, rather than a marginal improvement over an existing flow.</p>
+<table>
+  <tr><th>Property</th><th>Typical L1/L2</th><th>Somnia</th><th>Why it matters for Xenia</th></tr>
+  <tr><td class="k">Finality</td><td class="muted">2–12s</td><td class="pink">&lt; 1s</td><td class="muted">In-feed tipping feels like Web2 — no spinner.</td></tr>
+  <tr><td class="k">Gas / tip</td><td class="muted">$0.05–$1.00</td><td class="pink">&lt; $0.001</td><td class="muted">$0.10–$1.00 tips are economically sane.</td></tr>
+  <tr><td class="k">Throughput</td><td class="muted">100–4,000 TPS</td><td class="pink">1,000,000+ TPS</td><td class="muted">Headroom for a viral app, no fee spikes.</td></tr>
+  <tr><td class="k">EVM</td><td class="muted">Yes</td><td class="pink">Yes</td><td class="muted">Solidity + Hardhat + viem port cleanly.</td></tr>
+</table>
+<p>Xenia was originally conceived on a slower chain. The migration to Somnia is what turns the gesture from "I am sending a transaction" into "I just tapped a button" — and it is also what makes anchoring an on-chain proof-of-post on every interaction cheap enough to be worth doing.</p>
+
+<h2 class="h"><span class="num">12</span>Security</h2><div class="rule"></div>
+<ul class="list">
+  <li><strong>Reentrancy guard</strong> on every external call that moves value (tip, claim, refund, deposit, withdraw, tipOnBehalf, withdrawFees).</li>
+  <li><strong>Fee accounting is separated</strong> from user funds: accumulated fees live in their own variable, so a fee withdrawal can never touch a user balance.</li>
+  <li><strong>Wallet binding is immutable</strong> — a handle can be bound to a wallet exactly once and never rebound.</li>
+  <li><strong>Bot delegation is scoped to forwarding only</strong> — tipOnBehalf can route only to the resolved recipient, never to an arbitrary address, and the bot can never withdraw.</li>
+  <li><strong>90-day sender refund</strong> protects funds tipped to a handle that never registers.</li>
+  <li><strong>Two-step ownership transfer</strong> on both contracts; the platform fee is capped at 5%.</li>
+  <li><strong>No custody of keys</strong> — Privy embedded wallets stay client-side; the backend never holds user private keys, and bot endpoints require a shared secret.</li>
+</ul>
+
+<h2 class="h"><span class="num">13</span>Deployment</h2><div class="rule"></div>
+<p>Because the Express server serves the built React client in production, the entire application runs from a single Railway service: one build, one start command, one origin — which also removes cross-site cookie and CORS complexity. The database is a managed Neon Postgres instance. A preflight script validates the environment and probes the configured contract addresses on-chain (verifying real bytecode) before any deploy, and the build explicitly installs dev dependencies so the client bundles correctly regardless of the production environment flag. The contracts are already deployed and verified live on Somnia testnet.</p>
+
+<h2 class="h"><span class="num">14</span>Status, roadmap &amp; network reference</h2><div class="rule"></div>
+<table>
+  <tr><th>Phase</th><th>Scope</th></tr>
+  <tr><td class="pink">Now</td><td class="muted">Live on Somnia testnet · Mode A end-to-end · on-chain escrow indexing · extension demo with in-feed and profile tipping.</td></tr>
+  <tr><td class="pink">Next</td><td class="muted">Mainnet deployment (chainId 50313, SOMI) · Chrome Web Store listing · X login enabled via the Privy dashboard.</td></tr>
+  <tr><td class="pink">Later</td><td class="muted">Public @xeniaBot launch on a paid X API tier · indexer-backed leaderboards and analytics · third-party contract audit before high-value flows.</td></tr>
+</table>
+<table>
+  <tr><th>Property</th><th>Testnet</th><th>Mainnet</th></tr>
+  <tr><td class="k">Chain ID</td><td class="pink">50312</td><td class="pink">50313</td></tr>
+  <tr><td class="k">Symbol</td><td class="muted">STT</td><td class="muted">SOMI</td></tr>
+  <tr><td class="k">RPC</td><td class="muted">dream-rpc.somnia.network</td><td class="muted">mainnet-rpc.somnia.network</td></tr>
+  <tr><td class="k">Explorer</td><td class="muted">shannon-explorer.somnia.network</td><td class="muted">explorer.somnia.network</td></tr>
+</table>
+<p class="muted" style="text-align:center; margin-top:14px;">xenia // somnia — tip the post, not the platform.</p>
 
 </body>
 </html>
